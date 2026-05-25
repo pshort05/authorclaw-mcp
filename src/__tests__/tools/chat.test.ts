@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { chatTools, dispatchChatTool } from '../../tools/chat.js';
+import { taskManager } from '../../mcp/tasks/manager.js';
 
 describe('chat tools registration', () => {
   it('exposes authorclaw_chat and authorclaw_chat_async', () => {
@@ -31,6 +32,29 @@ describe('dispatchChatTool', () => {
   it('validates message is present', async () => {
     const client = { chat: vi.fn() } as any;
     await expect(dispatchChatTool('authorclaw_chat', {}, client)).rejects.toThrow(/message/);
+    expect(client.chat).not.toHaveBeenCalled();
+  });
+});
+
+describe('authorclaw_chat_async', () => {
+  it('returns a task_id immediately and runs the chat in the background', async () => {
+    const client = { chat: vi.fn().mockResolvedValue({ reply: 'done' }) } as any;
+    const out = await dispatchChatTool('authorclaw_chat_async', { message: 'go' }, client);
+    // Response should contain a task id immediately
+    expect(out.content[0].text).toMatch(/^Task queued: task_[A-Za-z0-9_]{4,}/);
+    const taskId = out.content[0].text.replace('Task queued: ', '');
+    // Let microtasks (the background promise) drain
+    await new Promise<void>((r) => setImmediate(r));
+    expect(client.chat).toHaveBeenCalledWith('go');
+    // Task should now be completed with the result stored
+    const task = taskManager.get(taskId);
+    expect(task?.status).toBe('completed');
+    expect(task?.result).toBe('done');
+  });
+
+  it('validates message is required for chat_async', async () => {
+    const client = { chat: vi.fn() } as any;
+    await expect(dispatchChatTool('authorclaw_chat_async', {}, client)).rejects.toThrow(/message/);
     expect(client.chat).not.toHaveBeenCalled();
   });
 });

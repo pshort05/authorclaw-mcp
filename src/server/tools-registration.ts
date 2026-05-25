@@ -58,9 +58,9 @@ function registerTools(server: Server, deps: ToolRegistrationDeps): void {
     ['openclaw_chat', (input) => tools.handleOpenclawChat(registry, input)],
     ['openclaw_status', (input) => tools.handleOpenclawStatus(registry, input)],
     ['openclaw_chat_async', (input) => tools.handleOpenclawChatAsync(registry, input)],
-    ['openclaw_task_status', (input) => tools.handleOpenclawTaskStatus(registry, input)],
-    ['openclaw_task_list', (input) => tools.handleOpenclawTaskList(registry, input)],
-    ['openclaw_task_cancel', (input) => tools.handleOpenclawTaskCancel(registry, input)],
+    ['authorclaw_task_status', (input) => tools.handleOpenclawTaskStatus(registry, input)],
+    ['authorclaw_task_list', (input) => tools.handleOpenclawTaskList(registry, input)],
+    ['authorclaw_task_cancel', (input) => tools.handleOpenclawTaskCancel(registry, input)],
     ['openclaw_instances', (input) => tools.handleOpenclawInstances(registry, input)],
   ]);
 

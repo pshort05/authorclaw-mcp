@@ -1,4 +1,5 @@
 import type { AuthorClawClient } from '../client/authorclaw.js';
+import { taskManager } from '../mcp/tasks/manager.js';
 
 export const chatTools = [
   {
@@ -39,8 +40,21 @@ export async function dispatchChatTool(
     return { content: [{ type: 'text', text: reply }] };
   }
   if (name === 'authorclaw_chat_async') {
-    // Implemented in Task 12 once the task queue is wired in.
-    throw new Error('authorclaw_chat_async not yet implemented');
+    const message = args.message;
+    if (typeof message !== 'string') throw new Error('message is required');
+    const task = taskManager.create({ type: 'chat', input: { message } });
+    // Run the chat in the background and store the result on the task.
+    Promise.resolve().then(async () => {
+      taskManager.updateStatus(task.id, 'running');
+      try {
+        const result = await client.chat(message);
+        taskManager.updateStatus(task.id, 'completed', result.reply);
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+        taskManager.updateStatus(task.id, 'failed', undefined, errorMsg);
+      }
+    });
+    return { content: [{ type: 'text', text: `Task queued: ${task.id}` }] };
   }
   throw new Error(`unknown chat tool: ${name}`);
 }

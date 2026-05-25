@@ -44,14 +44,14 @@ export const openclawChatAsyncTool: Tool = {
 };
 
 export const openclawTaskStatusTool: Tool = {
-  name: 'openclaw_task_status',
+  name: 'authorclaw_task_status',
   description: 'Check the status of an async task. Returns status, and result if completed.',
   inputSchema: {
     type: 'object',
     properties: {
       task_id: {
         type: 'string',
-        description: 'The task ID returned from openclaw_chat_async',
+        description: 'The task ID returned from authorclaw_chat_async',
       },
     },
     required: ['task_id'],
@@ -59,7 +59,7 @@ export const openclawTaskStatusTool: Tool = {
 };
 
 export const openclawTaskListTool: Tool = {
-  name: 'openclaw_task_list',
+  name: 'authorclaw_task_list',
   description: 'List all tasks. Optionally filter by status, session, or instance.',
   inputSchema: {
     type: 'object',
@@ -83,7 +83,7 @@ export const openclawTaskListTool: Tool = {
 };
 
 export const openclawTaskCancelTool: Tool = {
-  name: 'openclaw_task_cancel',
+  name: 'authorclaw_task_cancel',
   description: "Cancel a pending task. Only works for tasks that haven't started yet.",
   inputSchema: {
     type: 'object',
@@ -221,7 +221,7 @@ export async function handleOpenclawChatAsync(
         task_id: task.id,
         status: task.status,
         instance: instanceId,
-        message: 'Task queued. Use openclaw_task_status to check progress.',
+        message: 'Task queued. Use authorclaw_task_status to check progress.',
       },
       null,
       2
