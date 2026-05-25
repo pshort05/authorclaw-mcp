@@ -31,9 +31,9 @@ ARG VERSION=dev
 LABEL org.opencontainers.image.title="authorclaw-mcp" \
       org.opencontainers.image.description="Model Context Protocol server for AuthorClaw AI assistant integration" \
       org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.source="https://github.com/freema/authorclaw-mcp" \
+      org.opencontainers.image.source="https://github.com/pshort05/authorclaw-mcp" \
       org.opencontainers.image.licenses="MIT" \
-      io.modelcontextprotocol.server.name="io.github.freema/authorclaw-mcp"
+      io.modelcontextprotocol.server.name="io.github.pshort05/authorclaw-mcp"
 
 # Copy tini binary from builder
 COPY --from=builder /usr/bin/tini /usr/bin/tini
@@ -47,7 +47,7 @@ COPY --from=builder /app/package.json package.json
 
 # Environment defaults
 ENV NODE_ENV=production
-ENV AUTHORCLAW_URL=http://authorclaw:18789
+ENV AUTHORCLAW_URL=http://authorclaw:3847
 
 # Run as non-root user
 RUN chown -R node:node /app
