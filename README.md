@@ -31,9 +31,19 @@ The full design is documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 - **Series (4):** `authorclaw_series_list`, `authorclaw_series_create`, `authorclaw_series_delete`, `authorclaw_series_report`
 - **Task queue (3):** `authorclaw_task_status`, `authorclaw_task_list`, `authorclaw_task_cancel`
 
+## Optional: AuthorClaw LAN Patch
+
+If AuthorClaw is running anywhere other than `127.0.0.1` from the host that runs this MCP bridge — a Docker container, a different LAN machine, a VM — apply the patch in [`authorclaw-docker-fix/`](authorclaw-docker-fix/README.md). AuthorClaw's upstream source binds only to loopback, which makes Docker port-publishing and LAN access silently fail (`ERR_EMPTY_RESPONSE` on every request).
+
+The bundled `apply-lan-patch.sh` rewrites five spots in `gateway/src/index.ts` so AuthorClaw binds `0.0.0.0` and accepts non-loopback origins. The patch is idempotent and self-describing: re-run it after every AuthorClaw `git pull`. See [`authorclaw-docker-fix/INSTALL.md`](authorclaw-docker-fix/INSTALL.md) for the quick-start.
+
+The [`docker-compose.yml`](docker-compose.yml) in this repo wires the patch into an `authorclaw-patcher` init container so the stack-up flow handles it automatically.
+
+You don't need the patch if you run both AuthorClaw and `authorclaw-mcp` on the same machine and connect over `127.0.0.1`.
+
 ## Security
 
-See [`docs/threat-model.md`](docs/threat-model.md).
+See [`docs/threat-model.md`](docs/threat-model.md), and the security caveats in [`authorclaw-docker-fix/README.md`](authorclaw-docker-fix/README.md#security-caveats) if you apply the patch.
 
 ## License
 

@@ -7,7 +7,7 @@ services:
     image: alpine:3.19
     volumes:
       - ${AUTHORCLAW_SRC:-/opt/docker-compose/authorclaw/src}:/src
-      - ./scripts/apply-lan-patch.sh:/apply-lan-patch.sh:ro
+      - ./authorclaw-docker-fix/apply-lan-patch.sh:/apply-lan-patch.sh:ro
     environment:
       - REPO=/src
     # apply-lan-patch.sh uses python3 for safe literal-string replacement;
