@@ -1,7 +1,7 @@
 {
   "name": "authorclaw-mcp",
   "version": "0.1.0",
-  "mcpName": "io.github.freema/openclaw-mcp",
+  "mcpName": "io.github.pshort05/authorclaw-mcp",
   "description": "MCP server bridging Claude to a local AuthorClaw writing agent",
   "author": "Paul Short",
   "license": "MIT",
@@ -9,7 +9,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "openclaw-mcp": "./dist/index.js"
+    "authorclaw-mcp": "./dist/index.js"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",

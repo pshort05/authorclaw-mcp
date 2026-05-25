@@ -4,41 +4,40 @@
   "description": "AuthorClaw writing agent — chat, projects, files, research",
   "status": "active",
   "repository": {
-    "url": "https://github.com/freema/openclaw-mcp",
+    "url": "https://github.com/pshort05/authorclaw-mcp",
     "source": "github"
   },
-  "version": "1.4.0",
-  "websiteUrl": "https://openclaw-mcp.cloud",
+  "version": "0.1.0",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
-      "identifier": "openclaw-mcp",
-      "version": "1.4.0",
+      "identifier": "authorclaw-mcp",
+      "version": "0.1.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "name": "OPENCLAW_URL",
-          "description": "URL of your OpenClaw gateway",
+          "name": "AUTHORCLAW_URL",
+          "description": "URL of your AuthorClaw gateway",
           "default": "http://127.0.0.1:18789",
           "isRequired": true
         },
         {
-          "name": "OPENCLAW_GATEWAY_TOKEN",
-          "description": "Bearer token for OpenClaw gateway authentication",
+          "name": "AUTHORCLAW_API_TOKEN",
+          "description": "Bearer token for AuthorClaw gateway authentication",
           "isRequired": true,
           "isSecret": true
         },
         {
-          "name": "OPENCLAW_MODEL",
-          "description": "Model name for chat completions (e.g. 'openclaw' or 'openclaw/<agentId>')",
-          "default": "openclaw",
+          "name": "AUTHORCLAW_MODEL",
+          "description": "Model name for chat completions (e.g. 'authorclaw' or 'authorclaw/<agentId>')",
+          "default": "authorclaw",
           "isRequired": false
         },
         {
-          "name": "OPENCLAW_TIMEOUT_MS",
+          "name": "AUTHORCLAW_TIMEOUT_MS",
           "description": "Request timeout in milliseconds",
           "default": "120000",
           "isRequired": false
@@ -47,27 +46,27 @@
     },
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/freema/openclaw-mcp:1.4.0",
+      "identifier": "ghcr.io/pshort05/authorclaw-mcp",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "name": "OPENCLAW_URL",
-          "description": "URL of your OpenClaw gateway",
+          "name": "AUTHORCLAW_URL",
+          "description": "URL of your AuthorClaw gateway",
           "default": "http://127.0.0.1:18789",
           "isRequired": true
         },
         {
-          "name": "OPENCLAW_GATEWAY_TOKEN",
-          "description": "Bearer token for OpenClaw gateway authentication",
+          "name": "AUTHORCLAW_API_TOKEN",
+          "description": "Bearer token for AuthorClaw gateway authentication",
           "isRequired": true,
           "isSecret": true
         },
         {
-          "name": "OPENCLAW_MODEL",
+          "name": "AUTHORCLAW_MODEL",
           "description": "Model name for chat completions",
-          "default": "openclaw",
+          "default": "authorclaw",
           "isRequired": false
         }
       ]
