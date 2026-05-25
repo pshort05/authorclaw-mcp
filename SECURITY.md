@@ -1,8 +1,8 @@
 # Security Policy
 
-## 🔐 Security Considerations
+## Security Considerations
 
-OpenClaw MCP Bridge provides access to your AI assistant. **Proper security is critical.**
+AuthorClaw MCP Bridge provides access to your AI assistant. **Proper security is critical.**
 
 ### Threat Model
 
@@ -16,7 +16,7 @@ OpenClaw MCP Bridge provides access to your AI assistant. **Proper security is c
 
 ### Security Checklist
 
-#### ✅ Required for Production
+#### Required for Production
 
 - [ ] Enable OAuth authentication (`OAUTH_ENABLED=true`)
 - [ ] Use HTTPS (deploy behind reverse proxy with TLS)
@@ -24,7 +24,7 @@ OpenClaw MCP Bridge provides access to your AI assistant. **Proper security is c
 - [ ] Restrict network access (firewall rules)
 - [ ] Keep dependencies updated
 
-#### ✅ Recommended
+#### Recommended
 
 - [ ] Use short-lived OAuth tokens (15-60 minutes)
 - [ ] Enable audit logging
@@ -42,9 +42,9 @@ Best for enterprise deployments with existing identity providers:
 ```bash
 OAUTH_ENABLED=true
 OAUTH_INTROSPECTION_ENDPOINT=https://auth.company.com/oauth2/introspect
-OAUTH_CLIENT_ID=openclaw-mcp
+OAUTH_CLIENT_ID=authorclaw-mcp
 OAUTH_CLIENT_SECRET=your-client-secret
-OAUTH_REQUIRED_SCOPES=openclaw:read,openclaw:write
+OAUTH_REQUIRED_SCOPES=authorclaw:read,authorclaw:write
 ```
 
 Supported providers:
@@ -109,7 +109,7 @@ If you discover a security vulnerability, please **do not** open a public issue.
 
 Instead, report it privately via GitHub Security Advisories:
 
-👉 **[Report a vulnerability](https://github.com/freema/openclaw-mcp/security/advisories/new)**
+**[Report a vulnerability](https://github.com/pshort05/authorclaw-mcp/security/advisories/new)**
 
 When reporting, please include:
 
@@ -126,7 +126,7 @@ possible. Please allow up to 90 days for a fix before public disclosure.
 We release security patches as soon as possible. Keep your installation updated:
 
 ```bash
-npm update -g openclaw-mcp
+npm update -g authorclaw-mcp
 ```
 
 Subscribe to security advisories on GitHub.

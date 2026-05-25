@@ -76,7 +76,7 @@ describe('config.openclaw and config.server (re-exported from constants)', () =>
   it('exposes server name and version', async () => {
     const { config } = await loadConfig();
     expect(typeof config.server.name).toBe('string');
-    expect(config.server.name).toBe('openclaw-mcp');
+    expect(config.server.name).toBe('authorclaw-mcp');
     expect(typeof config.server.version).toBe('string');
   });
 

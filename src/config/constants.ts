@@ -1,6 +1,6 @@
 declare const __PKG_VERSION__: string;
 
-export const SERVER_NAME = 'openclaw-mcp';
+export const SERVER_NAME = 'authorclaw-mcp';
 export const SERVER_VERSION = __PKG_VERSION__;
 export const DEFAULT_OPENCLAW_URL = 'http://127.0.0.1:18789';
 export const DEFAULT_MODEL = 'openclaw';
