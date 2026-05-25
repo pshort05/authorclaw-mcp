@@ -18,6 +18,10 @@ import { projectTools, dispatchProjectTool } from '../tools/projects.js';
 import { fileTools, dispatchFileTool } from '../tools/files.js';
 import { researchTools, dispatchResearchTool } from '../tools/research.js';
 import { statusTools, dispatchStatusTool } from '../tools/status.js';
+import { documentTools, dispatchDocumentTool } from '../tools/documents.js';
+import { audioTools, dispatchAudioTool } from '../tools/audio.js';
+import { imageTools, dispatchImageTool } from '../tools/images.js';
+import { seriesTools, dispatchSeriesTool } from '../tools/series.js';
 import {
   openclawTaskStatusTool,
   openclawTaskListTool,
@@ -69,6 +73,10 @@ function registerTools(server: Server, deps: ToolRegistrationDeps): void {
     ...fileTools,
     ...researchTools,
     ...statusTools,
+    ...documentTools,
+    ...audioTools,
+    ...imageTools,
+    ...seriesTools,
     openclawTaskStatusTool,
     openclawTaskListTool,
     openclawTaskCancelTool,
@@ -99,6 +107,18 @@ function registerTools(server: Server, deps: ToolRegistrationDeps): void {
       }
       if (name === 'authorclaw_status') {
         return await dispatchStatusTool(name, args, authorClawClient);
+      }
+      if (name.startsWith('authorclaw_documents')) {
+        return await dispatchDocumentTool(name, args, authorClawClient);
+      }
+      if (name.startsWith('authorclaw_audio')) {
+        return await dispatchAudioTool(name, args, authorClawClient);
+      }
+      if (name.startsWith('authorclaw_images')) {
+        return await dispatchImageTool(name, args, authorClawClient);
+      }
+      if (name.startsWith('authorclaw_series')) {
+        return await dispatchSeriesTool(name, args, authorClawClient);
       }
       if (name === 'authorclaw_task_status') {
         return await handleOpenclawTaskStatus(registry, toolArgs);
