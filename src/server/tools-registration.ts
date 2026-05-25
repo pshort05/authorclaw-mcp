@@ -22,6 +22,12 @@ import { documentTools, dispatchDocumentTool } from '../tools/documents.js';
 import { audioTools, dispatchAudioTool } from '../tools/audio.js';
 import { imageTools, dispatchImageTool } from '../tools/images.js';
 import { seriesTools, dispatchSeriesTool } from '../tools/series.js';
+import { projectWritingTools, dispatchProjectWritingTool } from '../tools/project-writing.js';
+import { personaTools, dispatchPersonaTool } from '../tools/personas.js';
+import {
+  researchAdvancedTools,
+  dispatchResearchAdvancedTool,
+} from '../tools/research-advanced.js';
 import {
   openclawTaskStatusTool,
   openclawTaskListTool,
@@ -77,6 +83,9 @@ function registerTools(server: Server, deps: ToolRegistrationDeps): void {
     ...audioTools,
     ...imageTools,
     ...seriesTools,
+    ...projectWritingTools,
+    ...personaTools,
+    ...researchAdvancedTools,
     openclawTaskStatusTool,
     openclawTaskListTool,
     openclawTaskCancelTool,
@@ -96,20 +105,37 @@ function registerTools(server: Server, deps: ToolRegistrationDeps): void {
       if (name.startsWith('authorclaw_chat')) {
         return await dispatchChatTool(name, args, authorClawClient);
       }
-      if (name.startsWith('authorclaw_project')) {
+      // v0.1 project tools (4 specific names) — route to the simple dispatcher.
+      // Everything else under authorclaw_project_* belongs to v0.2 project-writing.
+      if (
+        name === 'authorclaw_project_create' ||
+        name === 'authorclaw_project_status' ||
+        name === 'authorclaw_project_list' ||
+        name === 'authorclaw_project_stop'
+      ) {
         return await dispatchProjectTool(name, args, authorClawClient);
+      }
+      if (name.startsWith('authorclaw_project_') || name.startsWith('authorclaw_plot_promises_')) {
+        return await dispatchProjectWritingTool(name, args, authorClawClient);
       }
       if (name.startsWith('authorclaw_files')) {
         return await dispatchFileTool(name, args, authorClawClient);
       }
+      // v0.1 has the exact-match research tool; v0.2 added research_lookup etc.
       if (name === 'authorclaw_research') {
         return await dispatchResearchTool(name, args, authorClawClient);
+      }
+      if (name.startsWith('authorclaw_research_')) {
+        return await dispatchResearchAdvancedTool(name, args, authorClawClient);
       }
       if (name === 'authorclaw_status') {
         return await dispatchStatusTool(name, args, authorClawClient);
       }
       if (name.startsWith('authorclaw_documents')) {
         return await dispatchDocumentTool(name, args, authorClawClient);
+      }
+      if (name.startsWith('authorclaw_personas')) {
+        return await dispatchPersonaTool(name, args, authorClawClient);
       }
       if (name.startsWith('authorclaw_audio')) {
         return await dispatchAudioTool(name, args, authorClawClient);
