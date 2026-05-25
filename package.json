@@ -1,0 +1,75 @@
+{
+  "name": "openclaw-mcp",
+  "version": "1.4.2",
+  "mcpName": "io.github.freema/openclaw-mcp",
+  "description": "Model Context Protocol (MCP) server for OpenClaw AI assistant integration",
+  "author": "Tomáš Grasl <https://www.tomasgrasl.cz/>",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "openclaw-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "check": "npm run lint:fix && npm run typecheck",
+    "check:all": "npm run check && npm run test:run && npm run build",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "openclaw",
+    "ai-assistant",
+    "claude",
+    "ai-agent"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/yargs": "^17.0.32",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "prettier": "^3.3.3",
+    "tsup": "^8.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.0"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "README.md",
+    "LICENSE",
+    "plugins"
+  ],
+  "homepage": "https://github.com/freema/openclaw-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/freema/openclaw-mcp.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
