@@ -1,9 +1,9 @@
 {
-  "name": "openclaw-mcp",
-  "version": "1.4.2",
+  "name": "authorclaw-mcp",
+  "version": "0.1.0",
   "mcpName": "io.github.freema/openclaw-mcp",
-  "description": "Model Context Protocol (MCP) server for OpenClaw AI assistant integration",
-  "author": "Tomáš Grasl <https://www.tomasgrasl.cz/>",
+  "description": "MCP server bridging Claude to a local AuthorClaw writing agent",
+  "author": "Paul Short",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
@@ -29,12 +29,9 @@
   },
   "keywords": [
     "mcp",
-    "mcp-server",
     "model-context-protocol",
-    "openclaw",
-    "ai-assistant",
-    "claude",
-    "ai-agent"
+    "authorclaw",
+    "writing"
   ],
   "engines": {
     "node": ">=20.0.0"
@@ -64,11 +61,12 @@
     "LICENSE",
     "plugins"
   ],
-  "homepage": "https://github.com/freema/openclaw-mcp#readme",
+  "homepage": "https://github.com/pshort05/authorclaw-mcp",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/freema/openclaw-mcp.git"
+    "url": "git+https://github.com/pshort05/authorclaw-mcp.git"
   },
+  "bugs": "https://github.com/pshort05/authorclaw-mcp/issues",
   "publishConfig": {
     "access": "public"
   }
