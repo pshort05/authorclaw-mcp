@@ -12,7 +12,20 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprot
 import type { InstanceRegistry } from '../openclaw/registry.js';
 import { SERVER_ICON_SVG_BASE64 } from '../config/constants.js';
 import { log, logError } from '../utils/logger.js';
-import * as tools from '../mcp/tools/index.js';
+import { AuthorClawClient } from '../client/authorclaw.js';
+import { chatTools, dispatchChatTool } from '../tools/chat.js';
+import { projectTools, dispatchProjectTool } from '../tools/projects.js';
+import { fileTools, dispatchFileTool } from '../tools/files.js';
+import { researchTools, dispatchResearchTool } from '../tools/research.js';
+import { statusTools, dispatchStatusTool } from '../tools/status.js';
+import {
+  openclawTaskStatusTool,
+  openclawTaskListTool,
+  openclawTaskCancelTool,
+  handleOpenclawTaskStatus,
+  handleOpenclawTaskList,
+  handleOpenclawTaskCancel,
+} from '../mcp/tools/tasks.js';
 
 export interface ToolRegistrationDeps {
   registry: InstanceRegistry;
@@ -44,34 +57,21 @@ export function createMcpServer(deps: ToolRegistrationDeps): Server {
 }
 
 /**
- * Register all OpenClaw tools on an existing MCP Server instance.
+ * Register all AuthorClaw tools on an existing MCP Server instance.
  */
 function registerTools(server: Server, deps: ToolRegistrationDeps): void {
   const { registry } = deps;
-
-  const toolHandlers = new Map<
-    string,
-    (
-      input: unknown
-    ) => Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }>
-  >([
-    ['openclaw_chat', (input) => tools.handleOpenclawChat(registry, input)],
-    ['openclaw_status', (input) => tools.handleOpenclawStatus(registry, input)],
-    ['openclaw_chat_async', (input) => tools.handleOpenclawChatAsync(registry, input)],
-    ['authorclaw_task_status', (input) => tools.handleOpenclawTaskStatus(registry, input)],
-    ['authorclaw_task_list', (input) => tools.handleOpenclawTaskList(registry, input)],
-    ['authorclaw_task_cancel', (input) => tools.handleOpenclawTaskCancel(registry, input)],
-    ['openclaw_instances', (input) => tools.handleOpenclawInstances(registry, input)],
-  ]);
+  const authorClawClient = new AuthorClawClient();
 
   const allTools = [
-    tools.openclawChatTool,
-    tools.openclawStatusTool,
-    tools.openclawChatAsyncTool,
-    tools.openclawTaskStatusTool,
-    tools.openclawTaskListTool,
-    tools.openclawTaskCancelTool,
-    tools.openclawInstancesTool,
+    ...chatTools,
+    ...projectTools,
+    ...fileTools,
+    ...researchTools,
+    ...statusTools,
+    openclawTaskStatusTool,
+    openclawTaskListTool,
+    openclawTaskCancelTool,
   ];
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -82,13 +82,34 @@ function registerTools(server: Server, deps: ToolRegistrationDeps): void {
     const { name, arguments: toolArgs } = request.params;
     log(`Executing tool: ${name}`);
 
-    const handler = toolHandlers.get(name);
-    if (!handler) {
-      throw new Error(`Unknown tool: ${name}`);
-    }
+    const args = (toolArgs ?? {}) as Record<string, unknown>;
 
     try {
-      return await handler(toolArgs);
+      if (name.startsWith('authorclaw_chat')) {
+        return await dispatchChatTool(name, args, authorClawClient);
+      }
+      if (name.startsWith('authorclaw_project')) {
+        return await dispatchProjectTool(name, args, authorClawClient);
+      }
+      if (name.startsWith('authorclaw_files')) {
+        return await dispatchFileTool(name, args, authorClawClient);
+      }
+      if (name === 'authorclaw_research') {
+        return await dispatchResearchTool(name, args, authorClawClient);
+      }
+      if (name === 'authorclaw_status') {
+        return await dispatchStatusTool(name, args, authorClawClient);
+      }
+      if (name === 'authorclaw_task_status') {
+        return await handleOpenclawTaskStatus(registry, toolArgs);
+      }
+      if (name === 'authorclaw_task_list') {
+        return await handleOpenclawTaskList(registry, toolArgs);
+      }
+      if (name === 'authorclaw_task_cancel') {
+        return await handleOpenclawTaskCancel(registry, toolArgs);
+      }
+      throw new Error(`Unknown tool: ${name}`);
     } catch (error) {
       logError(`Error executing tool ${name}`, error);
       throw error;
