@@ -1,36 +1,36 @@
 import type { AuthorClawClient } from '../client/authorclaw.js';
 
-const ALLOWED_FORMATS = ['docx', 'html', 'txt'] as const;
-type Format = (typeof ALLOWED_FORMATS)[number];
-
 export const fileTools = [
   {
     name: 'authorclaw_files_list',
-    description: 'List output files by workspace folder (projects, exports, research).',
+    description: 'List documents in the AuthorClaw document library.',
     inputSchema: {
       type: 'object',
-      properties: { folder: { type: 'string' } },
+      properties: {},
     },
   },
   {
     name: 'authorclaw_files_read',
-    description: 'Read the content of a named output file.',
+    description: 'Download and read the content of a project output file.',
     inputSchema: {
       type: 'object',
-      properties: { name: { type: 'string' } },
-      required: ['name'],
+      properties: {
+        project_id: { type: 'string', description: 'Project ID the file belongs to' },
+        filename: { type: 'string', description: 'Filename within the project (e.g. manuscript.md)' },
+      },
+      required: ['project_id', 'filename'],
     },
   },
   {
     name: 'authorclaw_files_export',
-    description: 'Export a file to docx, html, or txt and return the download URL.',
+    description: 'Export a project file as a DOCX document and return the download URL.',
     inputSchema: {
       type: 'object',
       properties: {
-        name: { type: 'string' },
-        format: { type: 'string', enum: ['docx', 'html', 'txt'] },
+        project_id: { type: 'string', description: 'Project ID the file belongs to' },
+        filename: { type: 'string', description: 'Source filename within the project (e.g. manuscript.md)' },
       },
-      required: ['name', 'format'],
+      required: ['project_id', 'filename'],
     },
   },
 ] as const;
@@ -43,25 +43,29 @@ export async function dispatchFileTool(
   client: AuthorClawClient,
 ): Promise<TextResult> {
   if (name === 'authorclaw_files_list') {
-    const folder = typeof args.folder === 'string' ? args.folder : undefined;
-    const list = await client.listFiles(folder);
+    const list = await client.listFiles();
     return { content: [{ type: 'text', text: JSON.stringify(list) }] };
   }
   if (name === 'authorclaw_files_read') {
-    const file = args.name;
-    if (typeof file !== 'string') throw new Error('name is required');
-    const { content } = await client.readFile(file);
-    return { content: [{ type: 'text', text: content }] };
+    const projectId = args.project_id;
+    const filename = args.filename;
+    if (typeof projectId !== 'string') throw new Error('project_id is required');
+    if (typeof filename !== 'string') throw new Error('filename is required');
+    const stream = await client.readFile(projectId, filename);
+    // Collect the stream into a string
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream as unknown as AsyncIterable<Buffer>) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    return { content: [{ type: 'text', text: Buffer.concat(chunks).toString('utf-8') }] };
   }
   if (name === 'authorclaw_files_export') {
-    const file = args.name;
-    const format = args.format;
-    if (typeof file !== 'string') throw new Error('name is required');
-    if (typeof format !== 'string' || !ALLOWED_FORMATS.includes(format as Format)) {
-      throw new Error(`format must be one of ${ALLOWED_FORMATS.join(', ')}`);
-    }
-    const { url } = await client.exportFile(file, format as Format);
-    return { content: [{ type: 'text', text: `Export ready: ${url}` }] };
+    const projectId = args.project_id;
+    const filename = args.filename;
+    if (typeof projectId !== 'string') throw new Error('project_id is required');
+    if (typeof filename !== 'string') throw new Error('filename is required');
+    const { downloadUrl } = await client.exportDocx(projectId, filename);
+    return { content: [{ type: 'text', text: `Export ready: ${downloadUrl}` }] };
   }
   throw new Error(`unknown file tool: ${name}`);
 }

@@ -30,17 +30,17 @@ describe('AuthorClawClient', () => {
   });
 
   describe('chat', () => {
-    it('POSTs message to /api/chat and returns reply', async () => {
+    it('POSTs message to /api/chat and returns response', async () => {
       fetchSpy.mockResolvedValue({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ reply: 'hello' }),
+        json: () => Promise.resolve({ response: 'hello' }),
       });
 
       const client = new AuthorClawClient('http://authorclaw:3847', '');
       const result = await client.chat('hi');
 
-      expect(result).toEqual({ reply: 'hello' });
+      expect(result).toEqual({ response: 'hello' });
       expect(fetchSpy).toHaveBeenCalledTimes(1);
 
       const [url, init] = fetchSpy.mock.calls[0];
@@ -54,7 +54,7 @@ describe('AuthorClawClient', () => {
       fetchSpy.mockResolvedValue({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ reply: 'ok' }),
+        json: () => Promise.resolve({ response: 'ok' }),
       });
 
       const client = new AuthorClawClient('http://h:3847', 'secret');
@@ -78,7 +78,7 @@ describe('AuthorClawClient', () => {
       fetchSpy.mockResolvedValue({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ reply: 'ok' }),
+        json: () => Promise.resolve({ response: 'ok' }),
       });
 
       const client = new AuthorClawClient('http://h:3847', '');
@@ -90,21 +90,21 @@ describe('AuthorClawClient', () => {
   });
 
   describe('AuthorClawClient projects', () => {
-    it('createProject POSTs task to /api/projects and returns id+steps', async () => {
+    it('createProject POSTs title+description to /api/projects/create and returns project', async () => {
       fetchSpy.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ id: 'p1', steps: 5 }),
+        json: () => Promise.resolve({ project: { id: 'p1', title: 'Test' } }),
       });
 
       const client = new AuthorClawClient('http://h:3847', '');
-      const result = await client.createProject('write a story');
+      const result = await client.createProject('My Story', 'write a story about dragons');
 
-      expect(result).toEqual({ id: 'p1', steps: 5 });
+      expect(result).toEqual({ project: { id: 'p1', title: 'Test' } });
       const [url, init] = fetchSpy.mock.calls[0];
-      expect(url).toBe('http://h:3847/api/projects');
+      expect(url).toBe('http://h:3847/api/projects/create');
       expect(init?.method).toBe('POST');
-      expect(init?.body).toBe(JSON.stringify({ task: 'write a story' }));
+      expect(init?.body).toBe(JSON.stringify({ title: 'My Story', description: 'write a story about dragons' }));
     });
 
     it('getProjectStatus GETs /api/projects/:id', async () => {
@@ -121,21 +121,21 @@ describe('AuthorClawClient', () => {
       expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/projects/p1');
     });
 
-    it('listProjects GETs /api/projects', async () => {
+    it('listProjects GETs /api/projects/list and unwraps the projects array', async () => {
       fetchSpy.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: () => Promise.resolve([]),
+        json: () => Promise.resolve({ projects: [{ id: 'p1' }] }),
       });
 
       const client = new AuthorClawClient('http://h:3847', '');
       const result = await client.listProjects();
 
-      expect(result).toEqual([]);
-      expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/projects');
+      expect(result).toEqual([{ id: 'p1' }]);
+      expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/projects/list');
     });
 
-    it('stopProject POSTs to /api/projects/:id/stop', async () => {
+    it('stopProject POSTs to /api/projects/:id/pause', async () => {
       fetchSpy.mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -145,86 +145,75 @@ describe('AuthorClawClient', () => {
       await client.stopProject('p1');
 
       const [url, init] = fetchSpy.mock.calls[0];
-      expect(url).toBe('http://h:3847/api/projects/p1/stop');
+      expect(url).toBe('http://h:3847/api/projects/p1/pause');
       expect(init?.method).toBe('POST');
     });
   });
 
   describe('AuthorClawClient files', () => {
-    it('listFiles with no folder GETs /api/files', async () => {
+    it('listFiles GETs /api/documents and unwraps the documents array', async () => {
       fetchSpy.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: () => Promise.resolve([]),
+        json: () => Promise.resolve({ documents: [{ filename: 'a.md' }] }),
       });
 
       const client = new AuthorClawClient('http://h:3847', '');
-      await client.listFiles();
+      const result = await client.listFiles();
 
-      expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/files');
+      expect(result).toEqual([{ filename: 'a.md' }]);
+      expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/documents');
     });
 
-    it('listFiles with folder URL-encodes the query', async () => {
+    it('readFile GETs /api/projects/:id/download/:filename with URL-encoded parts', async () => {
+      const mockBody = { [Symbol.asyncIterator]: async function* () { yield Buffer.from('hello'); } };
       fetchSpy.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: () => Promise.resolve([]),
+        body: mockBody,
       });
 
       const client = new AuthorClawClient('http://h:3847', '');
-      await client.listFiles('my projects');
+      await client.readFile('proj-1', 'a b.md');
 
-      expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/files?folder=my%20projects');
+      expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/projects/proj-1/download/a%20b.md');
     });
 
-    it('readFile URL-encodes the name', async () => {
+    it('exportDocx POSTs to /api/projects/:id/export-docx with filename', async () => {
       fetchSpy.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ content: 'hello' }),
+        json: () => Promise.resolve({ downloadUrl: '/api/projects/p1/download/x.docx' }),
       });
 
       const client = new AuthorClawClient('http://h:3847', '');
-      const out = await client.readFile('a b.md');
+      const out = await client.exportDocx('p1', 'x.md');
 
-      expect(out).toEqual({ content: 'hello' });
-      expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/files/a%20b.md');
-    });
-
-    it('exportFile POSTs to /api/export with name+format', async () => {
-      fetchSpy.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ url: '/d/x.docx' }),
-      });
-
-      const client = new AuthorClawClient('http://h:3847', '');
-      const out = await client.exportFile('x', 'docx');
-
-      expect(out).toEqual({ url: '/d/x.docx' });
+      expect(out).toEqual({ downloadUrl: '/api/projects/p1/download/x.docx' });
       const [url, init] = fetchSpy.mock.calls[0];
-      expect(url).toBe('http://h:3847/api/export');
+      expect(url).toBe('http://h:3847/api/projects/p1/export-docx');
       expect(init?.method).toBe('POST');
-      expect(init?.body).toBe(JSON.stringify({ name: 'x', format: 'docx' }));
+      expect(init?.body).toBe(JSON.stringify({ filename: 'x.md' }));
     });
   });
 
   describe('AuthorClawClient research + health', () => {
-    it('research POSTs topic to /api/research and returns summary', async () => {
+    it('research POSTs query to /api/research and returns results', async () => {
+      const mockResponse = { results: [{ title: 'Vintage Aircraft', url: 'http://example.com' }], totalFound: 1 };
       fetchSpy.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ summary: 'vintage aircraft history and variants' }),
+        json: () => Promise.resolve(mockResponse),
       });
 
       const client = new AuthorClawClient('http://h:3847', '');
       const result = await client.research('vintage aircraft');
 
-      expect(result).toEqual({ summary: 'vintage aircraft history and variants' });
+      expect(result).toEqual(mockResponse);
       const [url, init] = fetchSpy.mock.calls[0];
       expect(url).toBe('http://h:3847/api/research');
       expect(init?.method).toBe('POST');
-      expect(init?.body).toBe(JSON.stringify({ topic: 'vintage aircraft' }));
+      expect(init?.body).toBe(JSON.stringify({ query: 'vintage aircraft' }));
     });
 
     it('health GETs /api/health and returns status', async () => {

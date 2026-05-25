@@ -36,8 +36,8 @@ export async function dispatchChatTool(
   if (name === 'authorclaw_chat') {
     const message = args.message;
     if (typeof message !== 'string') throw new Error('message is required');
-    const { reply } = await client.chat(message);
-    return { content: [{ type: 'text', text: reply }] };
+    const { response } = await client.chat(message);
+    return { content: [{ type: 'text', text: response }] };
   }
   if (name === 'authorclaw_chat_async') {
     const message = args.message;
@@ -48,7 +48,7 @@ export async function dispatchChatTool(
       taskManager.updateStatus(task.id, 'running');
       try {
         const result = await client.chat(message);
-        taskManager.updateStatus(task.id, 'completed', result.reply);
+        taskManager.updateStatus(task.id, 'completed', result.response);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error';
         taskManager.updateStatus(task.id, 'failed', undefined, errorMsg);

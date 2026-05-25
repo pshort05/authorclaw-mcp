@@ -12,10 +12,12 @@ describe('project tools registration', () => {
     ]);
   });
 
-  it('project_create schema requires task string', () => {
+  it('project_create schema requires title and description strings', () => {
     const t = projectTools.find(t => t.name === 'authorclaw_project_create')!;
-    expect(t.inputSchema.required).toContain('task');
-    expect((t.inputSchema.properties as any).task.type).toBe('string');
+    expect(t.inputSchema.required).toContain('title');
+    expect(t.inputSchema.required).toContain('description');
+    expect((t.inputSchema.properties as any).title.type).toBe('string');
+    expect((t.inputSchema.properties as any).description.type).toBe('string');
   });
 
   it('project_status schema requires id string', () => {
@@ -39,14 +41,17 @@ describe('project tools registration', () => {
 });
 
 describe('dispatchProjectTool', () => {
-  it('project_create calls client.createProject and returns id+steps as text', async () => {
+  it('project_create calls client.createProject with title+description and returns project JSON', async () => {
     const client = {
-      createProject: vi.fn().mockResolvedValue({ id: 'p1', steps: 5 }),
+      createProject: vi.fn().mockResolvedValue({ project: { id: 'p1', title: 'Test' } }),
     } as any;
-    const out = await dispatchProjectTool('authorclaw_project_create', { task: 'write' }, client);
-    expect(client.createProject).toHaveBeenCalledWith('write');
-    expect(out.content[0].text).toContain('p1');
-    expect(out.content[0].text).toContain('5');
+    const out = await dispatchProjectTool(
+      'authorclaw_project_create',
+      { title: 'Test', description: 'write a story' },
+      client,
+    );
+    expect(client.createProject).toHaveBeenCalledWith('Test', 'write a story');
+    expect(JSON.parse(out.content[0].text)).toEqual({ id: 'p1', title: 'Test' });
   });
 
   it('project_status calls client.getProjectStatus and returns JSON text', async () => {
@@ -84,11 +89,19 @@ describe('dispatchProjectTool', () => {
     expect(out.content[0].text).toMatch(/stopped/i);
   });
 
-  it('validates task is required for project_create', async () => {
+  it('validates title is required for project_create', async () => {
     const client = { createProject: vi.fn() } as any;
     await expect(
-      dispatchProjectTool('authorclaw_project_create', {}, client),
-    ).rejects.toThrow(/task/);
+      dispatchProjectTool('authorclaw_project_create', { description: 'a story' }, client),
+    ).rejects.toThrow(/title/);
+    expect(client.createProject).not.toHaveBeenCalled();
+  });
+
+  it('validates description is required for project_create', async () => {
+    const client = { createProject: vi.fn() } as any;
+    await expect(
+      dispatchProjectTool('authorclaw_project_create', { title: 'My Book' }, client),
+    ).rejects.toThrow(/description/);
     expect(client.createProject).not.toHaveBeenCalled();
   });
 

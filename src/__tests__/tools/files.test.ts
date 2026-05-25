@@ -10,45 +10,69 @@ describe('file tools registration', () => {
       'authorclaw_files_export',
     ]);
   });
+
+  it('files_read requires project_id and filename', () => {
+    const readTool = fileTools.find(t => t.name === 'authorclaw_files_read');
+    expect(readTool?.inputSchema.required).toContain('project_id');
+    expect(readTool?.inputSchema.required).toContain('filename');
+  });
+
+  it('files_export requires project_id and filename', () => {
+    const exportTool = fileTools.find(t => t.name === 'authorclaw_files_export');
+    expect(exportTool?.inputSchema.required).toContain('project_id');
+    expect(exportTool?.inputSchema.required).toContain('filename');
+  });
 });
 
 describe('dispatchFileTool', () => {
-  it('files_list calls client.listFiles with optional folder', async () => {
-    const client = { listFiles: vi.fn().mockResolvedValue([]) } as any;
-    await dispatchFileTool('authorclaw_files_list', { folder: 'projects' }, client);
-    expect(client.listFiles).toHaveBeenCalledWith('projects');
+  it('files_list calls client.listFiles and returns the list', async () => {
+    const client = { listFiles: vi.fn().mockResolvedValue([{ filename: 'a.md' }]) } as any;
+    const out = await dispatchFileTool('authorclaw_files_list', {}, client);
+    expect(client.listFiles).toHaveBeenCalledWith();
+    expect(JSON.parse(out.content[0].text)).toEqual([{ filename: 'a.md' }]);
   });
 
-  it('files_list with no folder calls listFiles()', async () => {
-    const client = { listFiles: vi.fn().mockResolvedValue([]) } as any;
-    await dispatchFileTool('authorclaw_files_list', {}, client);
-    expect(client.listFiles).toHaveBeenCalledWith(undefined);
-  });
-
-  it('files_read calls client.readFile and returns content', async () => {
-    const client = { readFile: vi.fn().mockResolvedValue({ content: 'body' }) } as any;
-    const out = await dispatchFileTool('authorclaw_files_read', { name: 'a.md' }, client);
-    expect(client.readFile).toHaveBeenCalledWith('a.md');
-    expect(out.content[0].text).toBe('body');
-  });
-
-  it('files_export validates format enum', async () => {
-    const client = { exportFile: vi.fn() } as any;
+  it('files_read requires project_id', async () => {
+    const client = {} as any;
     await expect(
-      dispatchFileTool('authorclaw_files_export', { name: 'a', format: 'pdf' }, client),
-    ).rejects.toThrow(/format/);
+      dispatchFileTool('authorclaw_files_read', { filename: 'a.md' }, client),
+    ).rejects.toThrow(/project_id/);
   });
 
-  it('files_export calls client.exportFile and returns the URL', async () => {
+  it('files_read requires filename', async () => {
+    const client = {} as any;
+    await expect(
+      dispatchFileTool('authorclaw_files_read', { project_id: 'p1' }, client),
+    ).rejects.toThrow(/filename/);
+  });
+
+  it('files_read calls client.readFile and returns streamed content', async () => {
+    async function* mockStream() {
+      yield Buffer.from('hello world');
+    }
+    const client = { readFile: vi.fn().mockResolvedValue(mockStream()) } as any;
+    const out = await dispatchFileTool('authorclaw_files_read', { project_id: 'p1', filename: 'a.md' }, client);
+    expect(client.readFile).toHaveBeenCalledWith('p1', 'a.md');
+    expect(out.content[0].text).toBe('hello world');
+  });
+
+  it('files_export requires project_id', async () => {
+    const client = {} as any;
+    await expect(
+      dispatchFileTool('authorclaw_files_export', { filename: 'a.md' }, client),
+    ).rejects.toThrow(/project_id/);
+  });
+
+  it('files_export calls client.exportDocx and returns the download URL', async () => {
     const client = {
-      exportFile: vi.fn().mockResolvedValue({ url: '/d/a.docx' }),
+      exportDocx: vi.fn().mockResolvedValue({ downloadUrl: '/api/projects/p1/download/a.docx' }),
     } as any;
     const out = await dispatchFileTool(
       'authorclaw_files_export',
-      { name: 'a', format: 'docx' },
+      { project_id: 'p1', filename: 'a.md' },
       client,
     );
-    expect(client.exportFile).toHaveBeenCalledWith('a', 'docx');
-    expect(out.content[0].text).toContain('/d/a.docx');
+    expect(client.exportDocx).toHaveBeenCalledWith('p1', 'a.md');
+    expect(out.content[0].text).toContain('/api/projects/p1/download/a.docx');
   });
 });

@@ -18,7 +18,7 @@ describe('chat tools registration', () => {
 
 describe('dispatchChatTool', () => {
   it('routes authorclaw_chat to client.chat and returns text content', async () => {
-    const client = { chat: vi.fn().mockResolvedValue({ reply: 'world' }) } as any;
+    const client = { chat: vi.fn().mockResolvedValue({ response: 'world' }) } as any;
     const result = await dispatchChatTool('authorclaw_chat', { message: 'hi' }, client);
     expect(client.chat).toHaveBeenCalledWith('hi');
     expect(result).toEqual({ content: [{ type: 'text', text: 'world' }] });
@@ -38,7 +38,7 @@ describe('dispatchChatTool', () => {
 
 describe('authorclaw_chat_async', () => {
   it('returns a task_id immediately and runs the chat in the background', async () => {
-    const client = { chat: vi.fn().mockResolvedValue({ reply: 'done' }) } as any;
+    const client = { chat: vi.fn().mockResolvedValue({ response: 'done' }) } as any;
     const out = await dispatchChatTool('authorclaw_chat_async', { message: 'go' }, client);
     // Response should contain a task id immediately
     expect(out.content[0].text).toMatch(/^Task queued: task_[A-Za-z0-9_]{4,}/);

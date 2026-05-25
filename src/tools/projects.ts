@@ -8,12 +8,16 @@ export const projectTools = [
     inputSchema: {
       type: 'object',
       properties: {
-        task: {
+        title: {
+          type: 'string',
+          description: 'Project title, e.g. "Rogue Signal"',
+        },
+        description: {
           type: 'string',
           description: 'Project description, e.g. "Write a sci-fi thriller about rogue AI in aviation"',
         },
       },
-      required: ['task'],
+      required: ['title', 'description'],
     },
   },
   {
@@ -54,10 +58,12 @@ export async function dispatchProjectTool(
   client: AuthorClawClient,
 ): Promise<TextResult> {
   if (name === 'authorclaw_project_create') {
-    const task = args.task;
-    if (typeof task !== 'string') throw new Error('task is required');
-    const { id, steps } = await client.createProject(task);
-    return { content: [{ type: 'text', text: `Created project ${id} with ${steps} planned steps.` }] };
+    const title = args.title;
+    const description = args.description;
+    if (typeof title !== 'string') throw new Error('title is required');
+    if (typeof description !== 'string') throw new Error('description is required');
+    const result = await client.createProject(title, description);
+    return { content: [{ type: 'text', text: JSON.stringify(result.project) }] };
   }
   if (name === 'authorclaw_project_status') {
     const id = args.id;

@@ -16,7 +16,7 @@ export class AuthorClawClient {
     return h;
   }
 
-  async chat(message: string): Promise<{ reply: string }> {
+  async chat(message: string): Promise<{ response: string }> {
     const res = await fetch(`${this.base}/api/chat`, {
       method: 'POST',
       headers: this.headers(),
@@ -24,18 +24,18 @@ export class AuthorClawClient {
       signal: AbortSignal.timeout(config.authorclaw.timeoutMs),
     });
     if (!res.ok) throw new Error(`AuthorClaw chat error: ${res.status}`);
-    return (await res.json()) as { reply: string };
+    return (await res.json()) as { response: string };
   }
 
-  async createProject(task: string): Promise<{ id: string; steps: number }> {
-    const res = await fetch(`${this.base}/api/projects`, {
+  async createProject(title: string, description: string): Promise<{ project: unknown }> {
+    const res = await fetch(`${this.base}/api/projects/create`, {
       method: 'POST',
       headers: this.headers(),
-      body: JSON.stringify({ task }),
+      body: JSON.stringify({ title, description }),
       signal: AbortSignal.timeout(config.authorclaw.timeoutMs),
     });
     if (!res.ok) throw new Error(`AuthorClaw createProject error: ${res.status}`);
-    return (await res.json()) as { id: string; steps: number };
+    return (await res.json()) as { project: unknown };
   }
 
   async getProjectStatus(id: string): Promise<unknown> {
@@ -47,55 +47,59 @@ export class AuthorClawClient {
   }
 
   async listProjects(): Promise<unknown[]> {
-    const res = await fetch(`${this.base}/api/projects`, { headers: this.headers() });
+    const res = await fetch(`${this.base}/api/projects/list`, { headers: this.headers() });
     if (!res.ok) throw new Error(`AuthorClaw listProjects error: ${res.status}`);
-    return (await res.json()) as unknown[];
+    const body = (await res.json()) as { projects: unknown[] };
+    return body.projects;
   }
 
   async stopProject(id: string): Promise<void> {
-    const res = await fetch(`${this.base}/api/projects/${encodeURIComponent(id)}/stop`, {
+    const res = await fetch(`${this.base}/api/projects/${encodeURIComponent(id)}/pause`, {
       method: 'POST',
       headers: this.headers(),
     });
     if (!res.ok) throw new Error(`AuthorClaw stopProject error: ${res.status}`);
   }
 
-  async listFiles(folder?: string): Promise<unknown[]> {
-    const url = folder
-      ? `${this.base}/api/files?folder=${encodeURIComponent(folder)}`
-      : `${this.base}/api/files`;
-    const res = await fetch(url, { headers: this.headers() });
+  async listFiles(): Promise<unknown[]> {
+    const res = await fetch(`${this.base}/api/documents`, { headers: this.headers() });
     if (!res.ok) throw new Error(`AuthorClaw listFiles error: ${res.status}`);
-    return (await res.json()) as unknown[];
+    const body = (await res.json()) as { documents: unknown[] };
+    return body.documents;
   }
 
-  async readFile(name: string): Promise<{ content: string }> {
-    const res = await fetch(`${this.base}/api/files/${encodeURIComponent(name)}`, {
-      headers: this.headers(),
-    });
+  async readFile(projectId: string, filename: string): Promise<NodeJS.ReadableStream> {
+    const res = await fetch(
+      `${this.base}/api/projects/${encodeURIComponent(projectId)}/download/${encodeURIComponent(filename)}`,
+      { headers: this.headers() },
+    );
     if (!res.ok) throw new Error(`AuthorClaw readFile error: ${res.status}`);
-    return (await res.json()) as { content: string };
+    if (!res.body) throw new Error('AuthorClaw readFile: response body is null');
+    return res.body as unknown as NodeJS.ReadableStream;
   }
 
-  async exportFile(name: string, format: 'docx' | 'html' | 'txt'): Promise<{ url: string }> {
-    const res = await fetch(`${this.base}/api/export`, {
-      method: 'POST',
-      headers: this.headers(),
-      body: JSON.stringify({ name, format }),
-    });
-    if (!res.ok) throw new Error(`AuthorClaw exportFile error: ${res.status}`);
-    return (await res.json()) as { url: string };
+  async exportDocx(projectId: string, filename: string): Promise<{ downloadUrl: string }> {
+    const res = await fetch(
+      `${this.base}/api/projects/${encodeURIComponent(projectId)}/export-docx`,
+      {
+        method: 'POST',
+        headers: this.headers(),
+        body: JSON.stringify({ filename }),
+      },
+    );
+    if (!res.ok) throw new Error(`AuthorClaw exportDocx error: ${res.status}`);
+    return (await res.json()) as { downloadUrl: string };
   }
 
-  async research(topic: string): Promise<{ summary: string }> {
+  async research(query: string): Promise<{ results: unknown[]; totalFound: number; error?: string }> {
     const res = await fetch(`${this.base}/api/research`, {
       method: 'POST',
       headers: this.headers(),
-      body: JSON.stringify({ topic }),
+      body: JSON.stringify({ query }),
       signal: AbortSignal.timeout(config.authorclaw.timeoutMs),
     });
     if (!res.ok) throw new Error(`AuthorClaw research error: ${res.status}`);
-    return (await res.json()) as { summary: string };
+    return (await res.json()) as { results: unknown[]; totalFound: number; error?: string };
   }
 
   async health(): Promise<{ status: string }> {
