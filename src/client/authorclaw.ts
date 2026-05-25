@@ -26,4 +26,37 @@ export class AuthorClawClient {
     if (!res.ok) throw new Error(`AuthorClaw chat error: ${res.status}`);
     return (await res.json()) as { reply: string };
   }
+
+  async createProject(task: string): Promise<{ id: string; steps: number }> {
+    const res = await fetch(`${this.base}/api/projects`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ task }),
+      signal: AbortSignal.timeout(config.authorclaw.timeoutMs),
+    });
+    if (!res.ok) throw new Error(`AuthorClaw createProject error: ${res.status}`);
+    return (await res.json()) as { id: string; steps: number };
+  }
+
+  async getProjectStatus(id: string): Promise<unknown> {
+    const res = await fetch(`${this.base}/api/projects/${encodeURIComponent(id)}`, {
+      headers: this.headers(),
+    });
+    if (!res.ok) throw new Error(`AuthorClaw getProjectStatus error: ${res.status}`);
+    return await res.json();
+  }
+
+  async listProjects(): Promise<unknown[]> {
+    const res = await fetch(`${this.base}/api/projects`, { headers: this.headers() });
+    if (!res.ok) throw new Error(`AuthorClaw listProjects error: ${res.status}`);
+    return (await res.json()) as unknown[];
+  }
+
+  async stopProject(id: string): Promise<void> {
+    const res = await fetch(`${this.base}/api/projects/${encodeURIComponent(id)}/stop`, {
+      method: 'POST',
+      headers: this.headers(),
+    });
+    if (!res.ok) throw new Error(`AuthorClaw stopProject error: ${res.status}`);
+  }
 }
