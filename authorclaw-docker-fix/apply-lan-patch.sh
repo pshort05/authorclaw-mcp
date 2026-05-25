@@ -114,11 +114,11 @@ apply_one() {
 import sys, pathlib
 path, search, replace = sys.argv[1], sys.argv[2], sys.argv[3]
 p = pathlib.Path(path)
-text = p.read_text()
+text = p.read_text(encoding='utf-8')
 if text.count(search) != 1:
     print(f'EXPECTED exactly 1 occurrence, found {text.count(search)}', file=sys.stderr)
     sys.exit(3)
-p.write_text(text.replace(search, replace, 1))
+p.write_text(text.replace(search, replace, 1), encoding='utf-8')
 PY
     APPLIED[$n]=applied
     log "  [$n] applied"
@@ -126,11 +126,11 @@ PY
 
 log "patching $FILE"
 log ""
-apply_one 1-bind         "$T1_TEST" "$T1_SEARCH" "$T1_REPLACE"
-apply_one 2-socketio-cors "$T2_TEST" "$T2_SEARCH" "$T2_REPLACE"
-apply_one 3-csp-connect   "$T3_TEST" "$T3_SEARCH" "$T3_REPLACE"
-apply_one 4-express-cors  "$T4_TEST" "$T4_SEARCH" "$T4_REPLACE"
-apply_one 5-ws-origin     "$T5_TEST" "$T5_SEARCH" "$T5_REPLACE"
+apply_one 1-bind         "$T1_TEST" "$T1_SEARCH" "$T1_REPLACE" || true
+apply_one 2-socketio-cors "$T2_TEST" "$T2_SEARCH" "$T2_REPLACE" || true
+apply_one 3-csp-connect   "$T3_TEST" "$T3_SEARCH" "$T3_REPLACE" || true
+apply_one 4-express-cors  "$T4_TEST" "$T4_SEARCH" "$T4_REPLACE" || true
+apply_one 5-ws-origin     "$T5_TEST" "$T5_SEARCH" "$T5_REPLACE" || true
 log ""
 
 # Summary
@@ -162,7 +162,7 @@ if [ "$DO_REBUILD" = 1 ]; then
     sleep 5
     log ""
     log "post-rebuild verification:"
-    docker ps --filter "name=$SVC" --format '  {{.Names}} {{.Status}}'
+    sudo docker ps --filter "name=$SVC" --format '  {{.Names}} {{.Status}}'
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "http://localhost:3847/api/health" || echo "000")
     log "  http://localhost:3847/api/health => $code"
     [ "$code" = "200" ] || die "post-rebuild HTTP check failed (got $code)"

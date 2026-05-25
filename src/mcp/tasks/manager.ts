@@ -38,6 +38,7 @@ export interface TaskCreateOptions {
 
 class TaskManager {
   private tasks: Map<string, Task> = new Map();
+  private abortControllers: Map<string, AbortController> = new Map();
   private taskCounter = 0;
   private cleanupInterval: ReturnType<typeof setInterval> | undefined;
 
@@ -59,13 +60,39 @@ class TaskManager {
   }
 
   /**
-   * Create a new task
+   * Create a new task.
+   *
+   * If the task cap is reached, attempts to evict the oldest terminal
+   * (completed/failed/cancelled) tasks before throwing. This prevents the cap
+   * from being hit when many short tasks have accumulated.
    */
   create(options: TaskCreateOptions): Task {
     if (this.tasks.size >= MAX_TASKS) {
-      throw new Error(
-        `Task limit reached (${MAX_TASKS}). Wait for tasks to complete or cancel pending ones.`
-      );
+      // Collect terminal tasks sorted by completedAt (oldest first), falling
+      // back to createdAt for tasks that somehow lack completedAt.
+      const terminal = Array.from(this.tasks.values())
+        .filter(
+          (t) => t.status === 'completed' || t.status === 'failed' || t.status === 'cancelled'
+        )
+        .sort((a, b) => {
+          const aTime = (a.completedAt ?? a.createdAt).getTime();
+          const bTime = (b.completedAt ?? b.createdAt).getTime();
+          return aTime - bTime;
+        });
+
+      // Evict one-by-one until we are under the cap.
+      for (const old of terminal) {
+        this.tasks.delete(old.id);
+        this.abortControllers.delete(old.id);
+        if (this.tasks.size < MAX_TASKS) break;
+      }
+
+      // If eviction was not enough, fail loudly.
+      if (this.tasks.size >= MAX_TASKS) {
+        throw new Error(
+          `Task limit reached (${MAX_TASKS}). Wait for tasks to complete or cancel pending ones.`
+        );
+      }
     }
 
     const id = this.generateId();
@@ -140,26 +167,49 @@ class TaskManager {
   }
 
   /**
-   * Cancel a pending task
+   * Attach an AbortController to a running task so it can be cancelled
+   * mid-flight via cancel().
+   */
+  attachAbortController(id: string, controller: AbortController): void {
+    this.abortControllers.set(id, controller);
+  }
+
+  /**
+   * Cancel a task. Pending tasks are cancelled immediately. Running tasks that
+   * have an attached AbortController are signalled to abort; the background
+   * microtask is responsible for catching the AbortError and setting the final
+   * status to 'cancelled'.
    */
   cancel(id: string): boolean {
     const task = this.tasks.get(id);
     if (!task) return false;
 
-    if (task.status !== 'pending') {
-      return false; // Can only cancel pending tasks
+    if (task.status === 'pending') {
+      task.status = 'cancelled';
+      task.completedAt = new Date();
+      log(`Task cancelled: ${id}`);
+      return true;
     }
 
-    task.status = 'cancelled';
-    task.completedAt = new Date();
-    log(`Task cancelled: ${id}`);
-    return true;
+    if (task.status === 'running') {
+      const controller = this.abortControllers.get(id);
+      if (controller) {
+        controller.abort();
+        // Status will be updated to 'cancelled' by the background microtask
+        // once the AbortError propagates through the fetch.
+        log(`Task abort signalled: ${id}`);
+        return true;
+      }
+    }
+
+    return false; // Cannot cancel completed/failed/cancelled tasks
   }
 
   /**
    * Delete a task (cleanup)
    */
   delete(id: string): boolean {
+    this.abortControllers.delete(id);
     return this.tasks.delete(id);
   }
 

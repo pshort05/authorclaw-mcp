@@ -16,6 +16,7 @@ setDebugEnabled(args.debug);
 const deps: ToolRegistrationDeps = {
   serverName: SERVER_NAME,
   serverVersion: SERVER_VERSION,
+  clientTimeoutMs: args.timeout,
 };
 
 async function main() {

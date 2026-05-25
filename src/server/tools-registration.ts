@@ -39,6 +39,7 @@ import {
 export interface ToolRegistrationDeps {
   serverName: string;
   serverVersion: string;
+  clientTimeoutMs?: number;
 }
 
 /**
@@ -67,8 +68,8 @@ export function createMcpServer(deps: ToolRegistrationDeps): Server {
 /**
  * Register all AuthorClaw tools on an existing MCP Server instance.
  */
-function registerTools(server: Server, _deps: ToolRegistrationDeps): void {
-  const authorClawClient = new AuthorClawClient();
+function registerTools(server: Server, deps: ToolRegistrationDeps): void {
+  const authorClawClient = new AuthorClawClient(undefined, undefined, deps.clientTimeoutMs);
 
   const allTools = [
     ...chatTools,

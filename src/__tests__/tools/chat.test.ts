@@ -45,16 +45,51 @@ describe('authorclaw_chat_async', () => {
     const taskId = out.content[0].text.replace('Task queued: ', '');
     // Let microtasks (the background promise) drain
     await new Promise<void>((r) => setImmediate(r));
-    expect(client.chat).toHaveBeenCalledWith('go');
+    // chat is called with the message and an AbortSignal
+    expect(client.chat).toHaveBeenCalledWith('go', expect.any(AbortSignal));
     // Task should now be completed with the result stored
     const task = taskManager.get(taskId);
     expect(task?.status).toBe('completed');
     expect(task?.result).toBe('done');
+    expect(task?.instanceId).toBe('authorclaw');
   });
 
   it('validates message is required for chat_async', async () => {
     const client = { chat: vi.fn() } as any;
     await expect(dispatchChatTool('authorclaw_chat_async', {}, client)).rejects.toThrow(/message/);
     expect(client.chat).not.toHaveBeenCalled();
+  });
+
+  it('sets task status to cancelled when AbortError is thrown', async () => {
+    // Simulate a chat that is cancelled mid-flight
+    const client = {
+      chat: vi.fn().mockImplementation((_msg: string, signal?: AbortSignal) => {
+        return new Promise<{ response: string }>((_resolve, reject) => {
+          if (signal) {
+            signal.addEventListener('abort', () => {
+              const err = new Error('The operation was aborted.');
+              err.name = 'AbortError';
+              reject(err);
+            });
+          }
+        });
+      }),
+    } as any;
+
+    const out = await dispatchChatTool('authorclaw_chat_async', { message: 'slow task' }, client);
+    const taskId = out.content[0].text.replace('Task queued: ', '');
+
+    // Let the background microtask start (move to running)
+    await new Promise<void>((r) => setImmediate(r));
+
+    // Cancel the running task
+    taskManager.cancel(taskId);
+
+    // Let the AbortError propagate and be handled
+    await new Promise<void>((r) => setImmediate(r));
+    await new Promise<void>((r) => setImmediate(r));
+
+    const task = taskManager.get(taskId);
+    expect(task?.status).toBe('cancelled');
   });
 });

@@ -49,6 +49,26 @@ describe('TaskManager', () => {
       });
       expect(task.sessionId).toBe('sess-1');
     });
+
+    it('evicts the oldest completed task when at MAX_TASKS cap', () => {
+      // Fill the map with MAX_TASKS completed tasks by directly manipulating
+      // the internal state via the public API.  We use the delete+recreate
+      // approach: create tasks in a loop then mark them completed.
+      const MAX_TASKS = 1000;
+
+      // Create MAX_TASKS completed tasks
+      for (let i = 0; i < MAX_TASKS; i++) {
+        const t = taskManager.create({ type: 'chat', input: `msg-${i}` });
+        taskManager.updateStatus(t.id, 'completed', 'result');
+      }
+
+      expect(taskManager.stats().total).toBe(MAX_TASKS);
+
+      // Creating one more should succeed (oldest completed evicted)
+      const extra = taskManager.create({ type: 'chat', input: 'overflow' });
+      expect(extra.id).toBeDefined();
+      expect(taskManager.stats().total).toBe(MAX_TASKS);
+    });
   });
 
   describe('get', () => {
@@ -152,9 +172,19 @@ describe('TaskManager', () => {
       expect(taskManager.get(task.id)?.completedAt).toBeInstanceOf(Date);
     });
 
-    it('rejects cancellation of non-pending task', () => {
+    it('signals abort for a running task that has an attached controller', () => {
       const task = taskManager.create({ type: 'chat', input: 'test' });
       taskManager.updateStatus(task.id, 'running');
+      const controller = new AbortController();
+      taskManager.attachAbortController(task.id, controller);
+      expect(taskManager.cancel(task.id)).toBe(true);
+      expect(controller.signal.aborted).toBe(true);
+    });
+
+    it('returns false for running task without attached controller', () => {
+      const task = taskManager.create({ type: 'chat', input: 'test' });
+      taskManager.updateStatus(task.id, 'running');
+      // No attachAbortController call
       expect(taskManager.cancel(task.id)).toBe(false);
       expect(taskManager.get(task.id)?.status).toBe('running');
     });

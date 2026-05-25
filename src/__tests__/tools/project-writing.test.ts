@@ -7,7 +7,7 @@ import {
 // ── Registration ───────────────────────────────────────────────────────────
 
 describe('projectWritingTools registration', () => {
-  it('exposes all 19 project-writing tool names', () => {
+  it('exposes all 20 project-writing tool names', () => {
     const names = projectWritingTools.map(t => t.name);
     expect(names).toEqual([
       'authorclaw_project_execute',
@@ -24,6 +24,7 @@ describe('projectWritingTools registration', () => {
       'authorclaw_project_craft_critique',
       'authorclaw_project_dialogue_audit',
       'authorclaw_project_beta_reader',
+      'authorclaw_project_beta_reader_report',
       'authorclaw_project_cover_set',
       'authorclaw_plot_promises_list',
       'authorclaw_plot_promises_add',
@@ -223,6 +224,26 @@ describe('dispatchProjectWritingTool', () => {
       client,
     );
     expect(client.betaReader).toHaveBeenCalledWith('p1', ['romance-reader', 'thriller-fan']);
+  });
+
+  it('authorclaw_project_beta_reader_report calls getBetaReaderReport and returns JSON', async () => {
+    const client = {
+      getBetaReaderReport: vi.fn().mockResolvedValue({ report: { panelists: 3, avgScore: 8.2 } }),
+    } as any;
+    const out = await dispatchProjectWritingTool(
+      'authorclaw_project_beta_reader_report',
+      { project_id: 'p1' },
+      client,
+    );
+    expect(client.getBetaReaderReport).toHaveBeenCalledWith('p1');
+    expect(JSON.parse(out.content[0].text)).toEqual({ report: { panelists: 3, avgScore: 8.2 } });
+  });
+
+  it('authorclaw_project_beta_reader_report throws when project_id is missing', async () => {
+    const client = {} as any;
+    await expect(
+      dispatchProjectWritingTool('authorclaw_project_beta_reader_report', {}, client),
+    ).rejects.toThrow(/project_id is required/);
   });
 
   it('authorclaw_project_cover_set calls projectCoverSet with optional fields', async () => {

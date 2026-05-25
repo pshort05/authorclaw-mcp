@@ -54,7 +54,7 @@ export const taskListTool: Tool = {
 
 export const taskCancelTool: Tool = {
   name: 'authorclaw_task_cancel',
-  description: "Cancel a pending task. Only works for tasks that haven't started yet.",
+  description: 'Cancel a task. Pending tasks are cancelled immediately. Running tasks with an active HTTP request are signalled to abort.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -91,7 +91,7 @@ export async function handleTaskStatus(input: unknown): Promise<ToolResponse> {
     task_id: task.id,
     type: task.type,
     status: task.status,
-    instance: task.instanceId,
+    instance: task.instanceId ?? null,
     created_at: task.createdAt.toISOString(),
   };
 
@@ -160,7 +160,7 @@ export async function handleTaskList(input: unknown): Promise<ToolResponse> {
     task_id: t.id,
     type: t.type,
     status: t.status,
-    instance: t.instanceId,
+    instance: t.instanceId ?? null,
     priority: t.priority,
     created_at: t.createdAt.toISOString(),
     has_result: t.status === 'completed' && !!t.result,
@@ -194,9 +194,9 @@ export async function handleTaskCancel(input: unknown): Promise<ToolResponse> {
     return errorResponse(`Task not found: ${task_id}`);
   }
 
-  if (task.status !== 'pending') {
+  if (task.status !== 'pending' && task.status !== 'running') {
     return errorResponse(
-      `Cannot cancel task with status: ${task.status}. Only pending tasks can be cancelled.`
+      `Cannot cancel task with status: ${task.status}. Only pending or running tasks can be cancelled.`
     );
   }
 

@@ -32,6 +32,16 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     volumes:
       - authorclaw-workspace:/app/workspace
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3847/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
     # NOTE: port 3847 is NOT published to the host.
     # Only authorclaw-mcp can reach it, via the internal Docker network.
     networks:
@@ -43,7 +53,8 @@ services:
     container_name: authorclaw-mcp
     restart: unless-stopped
     depends_on:
-      - authorclaw
+      authorclaw:
+        condition: service_healthy
     ports:
       - "3000:3000"
     environment:

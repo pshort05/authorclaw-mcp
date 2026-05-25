@@ -197,6 +197,18 @@ export const projectWritingTools = [
     },
   },
   {
+    name: 'authorclaw_project_beta_reader_report',
+    description:
+      'Get the most recent beta-reader panel report for a project. Pair with authorclaw_project_beta_reader, which starts the check.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_id: { type: 'string' },
+      },
+      required: ['project_id'],
+    },
+  },
+  {
     name: 'authorclaw_project_cover_set',
     description:
       'Generate a full set of standard cover sizes (ebook, print, audiobook, social) for a project using the project title, author (from linked persona), and genre. Optionally override any field.',
@@ -404,6 +416,13 @@ export async function dispatchProjectWritingTool(
     const id = args.id;
     if (typeof id !== 'string') throw new Error('id is required');
     const result = await client.dialogueAudit(id);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+
+  if (name === 'authorclaw_project_beta_reader_report') {
+    const projectId = args.project_id;
+    if (typeof projectId !== 'string') throw new Error('project_id is required');
+    const result = await client.getBetaReaderReport(projectId);
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };
   }
 

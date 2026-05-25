@@ -42,16 +42,26 @@ export async function dispatchChatTool(
   if (name === 'authorclaw_chat_async') {
     const message = args.message;
     if (typeof message !== 'string') throw new Error('message is required');
-    const task = taskManager.create({ type: 'chat', input: { message } });
+    const controller = new AbortController();
+    const task = taskManager.create({
+      type: 'chat',
+      input: { message },
+      instanceId: 'authorclaw',
+    });
+    taskManager.attachAbortController(task.id, controller);
     // Run the chat in the background and store the result on the task.
     Promise.resolve().then(async () => {
       taskManager.updateStatus(task.id, 'running');
       try {
-        const result = await client.chat(message);
+        const result = await client.chat(message, controller.signal);
         taskManager.updateStatus(task.id, 'completed', result.response);
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-        taskManager.updateStatus(task.id, 'failed', undefined, errorMsg);
+        if (err instanceof Error && err.name === 'AbortError') {
+          taskManager.updateStatus(task.id, 'cancelled');
+        } else {
+          const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+          taskManager.updateStatus(task.id, 'failed', undefined, errorMsg);
+        }
       }
     });
     return { content: [{ type: 'text', text: `Task queued: ${task.id}` }] };

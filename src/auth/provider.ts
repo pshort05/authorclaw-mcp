@@ -73,10 +73,18 @@ const REAPER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 // The SDK authorize handler validates redirect_uri against client.redirect_uris.includes().
 // For the pre-configured client we accept any redirect_uri since the real auth
 // gate is the client_secret (verified during token exchange).
+//
+// length is intentionally NOT 1. The SDK has two branches when redirect_uri is omitted:
+//   - length === 1: use redirect_uris[0] as the implicit URI  — BROKEN with a proxy
+//     because index [0] returns undefined on an empty backing array.
+//   - length !== 1: throw "redirect_uri must be specified" — correct behaviour,
+//     since any well-formed MCP client will always supply a redirect_uri.
+// Using Number.MAX_SAFE_INTEGER ensures the SDK always takes the "must be specified"
+// branch rather than trying to use a non-existent element.
 const ALLOW_ANY_REDIRECT: string[] = new Proxy([] as string[], {
   get(target, prop) {
     if (prop === 'includes') return () => true;
-    if (prop === 'length') return 1; // SDK checks length === 1 when redirect_uri is omitted
+    if (prop === 'length') return Number.MAX_SAFE_INTEGER;
     return Reflect.get(target, prop);
   },
 });

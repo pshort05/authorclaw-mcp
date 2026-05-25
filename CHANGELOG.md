@@ -2,6 +2,30 @@
 
 Notable changes per release. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] 2026-05-25
+
+### Added
+
+- New MCP tool `authorclaw_project_beta_reader_report` that wraps the existing `getBetaReaderReport` client method. The companion `_beta_reader` tool's description previously instructed callers to poll a `_report` tool that did not exist; the tool now exists and the poll workflow functions end to end. Total registered tools: 58 (was 57).
+- New private `AuthorClawClient.timedFetch()` helper that applies `AbortSignal.timeout` to every HTTP call. Previously 37 of 54 client methods omitted the timeout and would hang indefinitely if the AuthorClaw backend stopped responding.
+- New `AuthorClawClient` optional third constructor parameter `timeoutMs` that overrides `config.authorclaw.timeoutMs`. Threaded through `ToolRegistrationDeps.clientTimeoutMs` and the `--timeout` CLI flag, so the CLI flag now actually controls per-request timeouts (previously parsed and logged but never applied).
+- AbortController plumbing for `authorclaw_chat_async`. The client creates a per-task controller, the task manager stores it, and `authorclaw_task_cancel` calls `controller.abort()` for running tasks. Background microtasks that catch AbortError now mark the task as `cancelled` rather than `failed`. The cancel tool's description was updated to drop the "only works for tasks that haven't started yet" caveat.
+- Healthcheck on the `authorclaw` Docker Compose service using a `node -e fetch(...)` probe against `/api/health`. The `authorclaw-mcp` service now uses `depends_on: condition: service_healthy` so it does not start until the gateway is actually accepting connections.
+
+### Fixed
+
+- `src/mcp/tasks/manager.ts` `create()`: when at `MAX_TASKS`, the method now evicts the oldest completed, failed, and cancelled tasks (sorted by `completedAt`) before throwing. Previously a hard cap would permanently block new task creation even when hundreds of terminal tasks were sitting in the map.
+- `src/tools/chat.ts`: `taskManager.create()` now sets `instanceId: 'authorclaw'`. Previously `instanceId` was undefined on every chat task, which made the `authorclaw_task_list` instance filter always return empty and `authorclaw_task_status` silently drop the documented `instance` field from its response.
+- `src/mcp/tools/tasks.ts`: task response JSON now uses `instance: task.instanceId ?? null` so the field is always present in the serialized response (JSON.stringify drops undefined keys, not null values).
+- `src/auth/provider.ts` `ALLOW_ANY_REDIRECT` proxy: the `length` getter now returns `Number.MAX_SAFE_INTEGER` rather than the hardcoded `1`. The previous value would have caused the SDK's authorize handler to attempt `redirect_uris[0]` (returning undefined, then crashing in `new URL(undefined)`) for clients that omit the `redirect_uri` request parameter. The new value forces the SDK to take the "must be specified" branch, which all well-formed MCP clients satisfy.
+- `authorclaw-docker-fix/apply-lan-patch.sh`: `apply_one` calls now append `|| true` so the script always reaches the per-patch summary and the post-loop diagnostic message, even when an anchor is missing. Previously `set -euo pipefail` would abort on the first MISSING anchor and the operator would see only an unexplained exit code.
+- `authorclaw-docker-fix/apply-lan-patch.sh`: `docker ps` in the `--rebuild` verification block now uses `sudo` to match the neighboring `sudo docker compose` calls. Previously the verification would fail on systems where the operator is not in the docker group.
+- `authorclaw-docker-fix/apply-lan-patch.sh`: the inline Python helper now passes `encoding='utf-8'` to both `read_text` and `write_text`, avoiding a UnicodeDecodeError on systems with non-UTF-8 locales when the patched file contains multi-byte characters.
+
+### Tests
+
+- 333 tests pass (up from 328). New cases cover the beta-reader-report tool dispatch, task cancellation during a running chat (AbortController plumbing), and task-cap eviction of completed tasks.
+
 ## [0.2.5] 2026-05-25
 
 ### Fixed
@@ -125,6 +149,7 @@ Initial public release.
 - Complete rebrand from `openclaw-mcp` to `authorclaw-mcp`: package metadata, server identity, configuration variables, MCP registry manifest, security policy, Docker image labels.
 - `docs/ARCHITECTURE.md`, `docs/installation.md`, `docs/configuration.md`, `docs/threat-model.md`.
 
+[0.2.6]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.6
 [0.2.5]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.5
 [0.2.4]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.4
 [0.2.3]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.3

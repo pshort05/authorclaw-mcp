@@ -2,17 +2,17 @@
 
 An MCP (Model Context Protocol) server that lets Claude drive [AuthorClaw](https://github.com/Ckokoski/authorclaw), an AI writing agent for novelists, from any MCP client: Claude Desktop, Claude.ai, or Claude Code.
 
-The bridge exposes 57 tools across twelve surfaces: chat, projects, plot promises, files and documents, personas, research, audio narration, cover images, series, and async task tracking. It speaks both stdio (for local clients) and SSE (for remote clients), with OAuth 2.1 protecting the SSE endpoint.
+The bridge exposes 58 tools across twelve surfaces: chat, projects, plot promises, files and documents, personas, research, audio narration, cover images, series, and async task tracking. It speaks both stdio (for local clients) and SSE (for remote clients), with OAuth 2.1 protecting the SSE endpoint.
 
 ## Status
 
 | Item | Value |
 | --- | --- |
-| Current release | `v0.2.5` |
+| Current release | `v0.2.6` |
 | License | MIT |
 | Node.js | 20 or newer |
 | AuthorClaw | tested against v4.0.0 |
-| Test count | 322 unit tests |
+| Test count | 333 unit tests |
 | MCP protocol | 2024-11-05 |
 
 ## Why this exists
@@ -98,14 +98,14 @@ In the Docker Compose deployment, AuthorClaw's port 3847 is never published to t
 
 ## Tools
 
-57 MCP tools across twelve surfaces. The full catalog (including the 174 AuthorClaw endpoints intentionally not wrapped and the rationale for each) lives in [`docs/endpoint-coverage.md`](docs/endpoint-coverage.md).
+58 MCP tools across twelve surfaces. The full catalog (including the 174 AuthorClaw endpoints intentionally not wrapped and the rationale for each) lives in [`docs/endpoint-coverage.md`](docs/endpoint-coverage.md).
 
 | Surface | Count | Tool names (prefix `authorclaw_`) |
 | --- | ---: | --- |
 | Chat | 2 | `chat`, `chat_async` |
 | Status | 1 | `status` |
 | Projects (lifecycle) | 9 | `project_create`, `_status`, `_list`, `_stop`, `_execute`, `_run`, `_resume`, `_restart`, `_compile` |
-| Projects (editorial) | 10 | `_continuity_check`, `_continuity_report`, `_structure_check`, `_style_clone`, `_pacing_heatmap`, `_format_pro`, `_craft_critique`, `_dialogue_audit`, `_beta_reader`, `_cover_set` |
+| Projects (editorial) | 11 | `_continuity_check`, `_continuity_report`, `_structure_check`, `_style_clone`, `_pacing_heatmap`, `_format_pro`, `_craft_critique`, `_dialogue_audit`, `_beta_reader`, `_beta_reader_report`, `_cover_set` |
 | Plot promises | 4 | `plot_promises_list`, `_add`, `_extract`, `_audit` |
 | Files | 3 | `files_list`, `files_read`, `files_export` |
 | Documents | 2 | `documents_upload`, `documents_delete` |
