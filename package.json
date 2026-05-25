@@ -1,6 +1,6 @@
 {
   "name": "authorclaw-mcp",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "mcpName": "io.github.pshort05/authorclaw-mcp",
   "description": "MCP server bridging Claude to a local AuthorClaw writing agent",
   "author": "Paul Short",

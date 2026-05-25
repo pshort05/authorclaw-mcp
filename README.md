@@ -8,7 +8,7 @@ The bridge exposes 57 tools across twelve surfaces: chat, projects, plot promise
 
 | Item | Value |
 | --- | --- |
-| Current release | `v0.2.3` |
+| Current release | `v0.2.4` |
 | License | MIT |
 | Node.js | 20 or newer |
 | AuthorClaw | tested against v4.0.0 |

@@ -2,19 +2,21 @@
 
 Notable changes per release. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.4] 2026-05-25
 
 ### Added
 
 - New top-level `CHANGELOG.md` (this file).
-- New `docs/development.md` covering build, test, smoke-test, and release.
-- Substantially expanded top-level `README.md`: status table, architecture diagram, configuration overview, documentation index, compatibility matrix.
+- New `docs/development.md` covering build, test, live smoke, adding tools, and the release process.
+- Substantially expanded top-level `README.md`: status table, architecture diagram, configuration overview, documentation index, compatibility matrix, credits.
 
 ### Changed
 
-- All documentation rewritten without em or en dashes for a consistent style.
-- `docs/installation.md` expanded with troubleshooting and verification.
-- `docs/configuration.md` expanded with an annotated `.env` walkthrough and per-section context.
+- All documentation rewritten without em or en dashes, emojis, or check marks. Word-based status labels replace icons in the endpoint coverage tables.
+- `docs/installation.md` expanded with prerequisites, verification, troubleshooting, and an update workflow.
+- `docs/configuration.md` expanded with an annotated `.env` walkthrough, OAuth secret generation, multi-environment usage, and CLI options table.
+- `docs/threat-model.md`: new section on `authorclaw_task_cancel` residual risk (cannot abort in-flight chats).
+- `docs/ARCHITECTURE.md`: repository layout tree updated to reflect the v0.2 state. Tool count updated to 57. The `scripts/apply-lan-patch.sh` path updated to `authorclaw-docker-fix/apply-lan-patch.sh`.
 
 ## [0.2.3] 2026-05-25
 
@@ -109,7 +111,7 @@ Initial public release.
 - Complete rebrand from `openclaw-mcp` to `authorclaw-mcp`: package metadata, server identity, configuration variables, MCP registry manifest, security policy, Docker image labels.
 - `docs/ARCHITECTURE.md`, `docs/installation.md`, `docs/configuration.md`, `docs/threat-model.md`.
 
-[Unreleased]: https://github.com/pshort05/authorclaw-mcp/compare/v0.2.3...HEAD
+[0.2.4]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.4
 [0.2.3]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.3
 [0.2.2]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.2
 [0.2.1]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.1
