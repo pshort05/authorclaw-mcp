@@ -86,4 +86,21 @@ export class AuthorClawClient {
     if (!res.ok) throw new Error(`AuthorClaw exportFile error: ${res.status}`);
     return (await res.json()) as { url: string };
   }
+
+  async research(topic: string): Promise<{ summary: string }> {
+    const res = await fetch(`${this.base}/api/research`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ topic }),
+      signal: AbortSignal.timeout(config.authorclaw.timeoutMs),
+    });
+    if (!res.ok) throw new Error(`AuthorClaw research error: ${res.status}`);
+    return (await res.json()) as { summary: string };
+  }
+
+  async health(): Promise<{ status: string }> {
+    const res = await fetch(`${this.base}/api/health`, { headers: this.headers() });
+    if (!res.ok) throw new Error(`AuthorClaw health error: ${res.status}`);
+    return (await res.json()) as { status: string };
+  }
 }

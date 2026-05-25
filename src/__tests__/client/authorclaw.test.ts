@@ -208,4 +208,37 @@ describe('AuthorClawClient', () => {
       expect(init?.body).toBe(JSON.stringify({ name: 'x', format: 'docx' }));
     });
   });
+
+  describe('AuthorClawClient research + health', () => {
+    it('research POSTs topic to /api/research and returns summary', async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ summary: 'vintage aircraft history and variants' }),
+      });
+
+      const client = new AuthorClawClient('http://h:3847', '');
+      const result = await client.research('vintage aircraft');
+
+      expect(result).toEqual({ summary: 'vintage aircraft history and variants' });
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(url).toBe('http://h:3847/api/research');
+      expect(init?.method).toBe('POST');
+      expect(init?.body).toBe(JSON.stringify({ topic: 'vintage aircraft' }));
+    });
+
+    it('health GETs /api/health and returns status', async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ status: 'ok' }),
+      });
+
+      const client = new AuthorClawClient('http://h:3847', '');
+      const result = await client.health();
+
+      expect(result).toEqual({ status: 'ok' });
+      expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/health');
+    });
+  });
 });
