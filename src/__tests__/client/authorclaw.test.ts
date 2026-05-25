@@ -151,8 +151,6 @@ describe('AuthorClawClient', () => {
   });
 
   describe('AuthorClawClient files', () => {
-    beforeEach(() => vi.restoreAllMocks());
-
     it('listFiles with no folder GETs /api/files', async () => {
       fetchSpy.mockResolvedValueOnce({
         ok: true,
