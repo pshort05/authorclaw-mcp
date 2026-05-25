@@ -2,6 +2,20 @@
 
 Notable changes per release. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] 2026-05-25
+
+### Fixed
+
+- `authorclaw-docker-fix/apply-lan-patch.sh`: the script no longer overwrites a caller-supplied `REPO` env var. The hardcoded path is now a fallback default: `REPO="${REPO:-/opt/docker-compose/authorclaw/src}"`. Same change applied to `COMPOSE_DIR` and `SVC`. This unblocks the docker-compose patcher container, which sets `REPO=/src` to point at the bind-mounted source. Before this fix the patcher exited 1 with `ERROR: /opt/docker-compose/authorclaw/src/gateway/src/index.ts not found`, and the `depends_on: condition: service_completed_successfully` clause prevented the AuthorClaw service from starting.
+- `docker-compose.yml`: the patcher container now installs `bash` alongside `python3` and invokes the script with `bash`. The script's shebang is `#!/usr/bin/env bash` and it uses bash builtins (`declare`), so the previous `sh /apply-lan-patch.sh` invocation failed with `line 57: declare: not found` on Alpine.
+- `src/server/tools-registration.ts`: the three task-tool handlers (`handleTaskStatus`, `handleTaskList`, `handleTaskCancel`) now receive the null-coalesced `args` (`(toolArgs ?? {})`) instead of the raw `toolArgs`. Previously, an MCP client that called `authorclaw_task_list` without an `arguments` field (valid per the MCP spec, since the tool has no required parameters) got back `Invalid input: expected an object` instead of the actual list.
+- `src/config.ts`: `AUTHORCLAW_TIMEOUT_MS` is now parsed defensively via a new exported `parseTimeoutMs()` helper. Empty string, whitespace, non-numeric strings, zero, and negative values all fall back to the 300000ms default with a single stderr warning. Previously, `AUTHORCLAW_TIMEOUT_MS=banana` produced `NaN` which crashed every fetch via `AbortSignal.timeout(NaN)` with a `RangeError` at the first tool call; `AUTHORCLAW_TIMEOUT_MS=""` produced `0` which aborted every fetch on the next tick.
+- `src/cli.ts`: now uses the same `parseTimeoutMs()` helper so the startup log line `Request timeout: ...ms` always shows the actual effective value rather than `NaN`.
+
+### Tests
+
+- 328 tests pass (up from 322 with 6 new tests covering the timeout parsing edge cases).
+
 ## [0.2.4] 2026-05-25
 
 ### Added
@@ -111,6 +125,7 @@ Initial public release.
 - Complete rebrand from `openclaw-mcp` to `authorclaw-mcp`: package metadata, server identity, configuration variables, MCP registry manifest, security policy, Docker image labels.
 - `docs/ARCHITECTURE.md`, `docs/installation.md`, `docs/configuration.md`, `docs/threat-model.md`.
 
+[0.2.5]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.5
 [0.2.4]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.4
 [0.2.3]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.3
 [0.2.2]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.2

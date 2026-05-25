@@ -144,13 +144,13 @@ function registerTools(server: Server, _deps: ToolRegistrationDeps): void {
         return await dispatchSeriesTool(name, args, authorClawClient);
       }
       if (name === 'authorclaw_task_status') {
-        return await handleTaskStatus(toolArgs);
+        return await handleTaskStatus(args);
       }
       if (name === 'authorclaw_task_list') {
-        return await handleTaskList(toolArgs);
+        return await handleTaskList(args);
       }
       if (name === 'authorclaw_task_cancel') {
-        return await handleTaskCancel(toolArgs);
+        return await handleTaskCancel(args);
       }
       throw new Error(`Unknown tool: ${name}`);
     } catch (error) {

@@ -48,6 +48,69 @@ describe('config.authorclaw', () => {
   });
 });
 
+describe('config.authorclaw.timeoutMs defensive parsing', () => {
+  const originalEnv = { ...process.env };
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.resetModules();
+    delete process.env.AUTHORCLAW_TIMEOUT_MS;
+    warnSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+    warnSpy.mockRestore();
+    vi.resetModules();
+  });
+
+  async function loadConfig() {
+    return await import('../config.js');
+  }
+
+  it('falls back to default when AUTHORCLAW_TIMEOUT_MS is the empty string', async () => {
+    process.env.AUTHORCLAW_TIMEOUT_MS = '';
+    const { config } = await loadConfig();
+    expect(config.authorclaw.timeoutMs).toBe(300_000);
+  });
+
+  it('falls back to default when AUTHORCLAW_TIMEOUT_MS is whitespace only', async () => {
+    process.env.AUTHORCLAW_TIMEOUT_MS = '   ';
+    const { config } = await loadConfig();
+    expect(config.authorclaw.timeoutMs).toBe(300_000);
+  });
+
+  it('falls back to default and warns when value is non-numeric', async () => {
+    process.env.AUTHORCLAW_TIMEOUT_MS = 'banana';
+    const { config } = await loadConfig();
+    expect(config.authorclaw.timeoutMs).toBe(300_000);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('AUTHORCLAW_TIMEOUT_MS="banana"'),
+    );
+  });
+
+  it('falls back to default when value is zero', async () => {
+    process.env.AUTHORCLAW_TIMEOUT_MS = '0';
+    const { config } = await loadConfig();
+    expect(config.authorclaw.timeoutMs).toBe(300_000);
+  });
+
+  it('falls back to default when value is negative', async () => {
+    process.env.AUTHORCLAW_TIMEOUT_MS = '-100';
+    const { config } = await loadConfig();
+    expect(config.authorclaw.timeoutMs).toBe(300_000);
+  });
+
+  it('parseTimeoutMs is exported for reuse', async () => {
+    const { parseTimeoutMs } = await loadConfig();
+    expect(parseTimeoutMs(undefined)).toBe(300_000);
+    expect(parseTimeoutMs('60000')).toBe(60_000);
+    expect(parseTimeoutMs('abc')).toBe(300_000);
+    expect(parseTimeoutMs('5000', 1000)).toBe(5000);
+    expect(parseTimeoutMs('bad', 1000)).toBe(1000);
+  });
+});
+
 describe('config.server (re-exported from constants)', () => {
   beforeEach(() => {
     vi.resetModules();

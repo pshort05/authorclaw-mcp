@@ -10,9 +10,9 @@ services:
       - ./authorclaw-docker-fix/apply-lan-patch.sh:/apply-lan-patch.sh:ro
     environment:
       - REPO=/src
-    # apply-lan-patch.sh uses python3 for safe literal-string replacement;
-    # install it before running the patch script.
-    command: sh -c 'apk add --no-cache python3 && sh /apply-lan-patch.sh'
+    # apply-lan-patch.sh uses bash features (declare) and python3 for safe
+    # literal-string replacement. Install both before invoking with bash.
+    command: sh -c 'apk add --no-cache bash python3 && bash /apply-lan-patch.sh'
     # Runs once and exits; authorclaw waits for it via depends_on
     # (condition: service_completed_successfully).
 

@@ -1,5 +1,6 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import { parseTimeoutMs } from './config.js';
 
 export interface CliArgs {
   transport: 'stdio' | 'sse';
@@ -40,7 +41,7 @@ export function parseArguments(version: string): CliArgs {
     .option('timeout', {
       type: 'number',
       description: 'Request timeout in milliseconds',
-      default: parseInt(process.env.AUTHORCLAW_TIMEOUT_MS || '120000', 10),
+      default: parseTimeoutMs(process.env.AUTHORCLAW_TIMEOUT_MS),
     })
     .option('debug', {
       type: 'boolean',

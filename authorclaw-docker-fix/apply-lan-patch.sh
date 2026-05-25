@@ -25,10 +25,10 @@
 
 set -euo pipefail
 
-REPO=/opt/docker-compose/authorclaw/src
+REPO="${REPO:-/opt/docker-compose/authorclaw/src}"
 FILE="$REPO/gateway/src/index.ts"
-COMPOSE_DIR=/opt/docker-compose
-SVC=authorclaw
+COMPOSE_DIR="${COMPOSE_DIR:-/opt/docker-compose}"
+SVC="${SVC:-authorclaw}"
 
 CHECK_ONLY=0
 DO_REBUILD=0
