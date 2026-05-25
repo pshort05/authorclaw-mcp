@@ -59,4 +59,31 @@ export class AuthorClawClient {
     });
     if (!res.ok) throw new Error(`AuthorClaw stopProject error: ${res.status}`);
   }
+
+  async listFiles(folder?: string): Promise<unknown[]> {
+    const url = folder
+      ? `${this.base}/api/files?folder=${encodeURIComponent(folder)}`
+      : `${this.base}/api/files`;
+    const res = await fetch(url, { headers: this.headers() });
+    if (!res.ok) throw new Error(`AuthorClaw listFiles error: ${res.status}`);
+    return (await res.json()) as unknown[];
+  }
+
+  async readFile(name: string): Promise<{ content: string }> {
+    const res = await fetch(`${this.base}/api/files/${encodeURIComponent(name)}`, {
+      headers: this.headers(),
+    });
+    if (!res.ok) throw new Error(`AuthorClaw readFile error: ${res.status}`);
+    return (await res.json()) as { content: string };
+  }
+
+  async exportFile(name: string, format: 'docx' | 'html' | 'txt'): Promise<{ url: string }> {
+    const res = await fetch(`${this.base}/api/export`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ name, format }),
+    });
+    if (!res.ok) throw new Error(`AuthorClaw exportFile error: ${res.status}`);
+    return (await res.json()) as { url: string };
+  }
 }

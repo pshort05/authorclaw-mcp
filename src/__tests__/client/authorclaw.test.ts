@@ -149,4 +149,65 @@ describe('AuthorClawClient', () => {
       expect(init?.method).toBe('POST');
     });
   });
+
+  describe('AuthorClawClient files', () => {
+    beforeEach(() => vi.restoreAllMocks());
+
+    it('listFiles with no folder GETs /api/files', async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve([]),
+      });
+
+      const client = new AuthorClawClient('http://h:3847', '');
+      await client.listFiles();
+
+      expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/files');
+    });
+
+    it('listFiles with folder URL-encodes the query', async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve([]),
+      });
+
+      const client = new AuthorClawClient('http://h:3847', '');
+      await client.listFiles('my projects');
+
+      expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/files?folder=my%20projects');
+    });
+
+    it('readFile URL-encodes the name', async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ content: 'hello' }),
+      });
+
+      const client = new AuthorClawClient('http://h:3847', '');
+      const out = await client.readFile('a b.md');
+
+      expect(out).toEqual({ content: 'hello' });
+      expect(fetchSpy.mock.calls[0][0]).toBe('http://h:3847/api/files/a%20b.md');
+    });
+
+    it('exportFile POSTs to /api/export with name+format', async () => {
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ url: '/d/x.docx' }),
+      });
+
+      const client = new AuthorClawClient('http://h:3847', '');
+      const out = await client.exportFile('x', 'docx');
+
+      expect(out).toEqual({ url: '/d/x.docx' });
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(url).toBe('http://h:3847/api/export');
+      expect(init?.method).toBe('POST');
+      expect(init?.body).toBe(JSON.stringify({ name: 'x', format: 'docx' }));
+    });
+  });
 });
