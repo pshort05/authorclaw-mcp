@@ -18,7 +18,7 @@ import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js
 import { mcpAuthRouter } from '@modelcontextprotocol/sdk/server/auth/router.js';
 import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 
-import { OpenClawAuthProvider } from '../../auth/provider.js';
+import { AuthorClawAuthProvider } from '../../auth/provider.js';
 
 const CLIENT_ID = 'test-client';
 const CLIENT_SECRET = 'test-secret-value';
@@ -27,7 +27,7 @@ let server: http.Server;
 let baseUrl: string;
 
 function createTestApp() {
-  const provider = new OpenClawAuthProvider({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET });
+  const provider = new AuthorClawAuthProvider({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET });
   const app = createMcpExpressApp({ host: '127.0.0.1' });
 
   const issuerUrl = new URL('http://127.0.0.1:0');

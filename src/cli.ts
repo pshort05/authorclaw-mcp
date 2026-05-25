@@ -1,12 +1,7 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { DEFAULT_OPENCLAW_URL, DEFAULT_MODEL } from './config/constants.js';
-import type { InstanceConfig } from './openclaw/types.js';
 
 export interface CliArgs {
-  openclawUrl: string;
-  gatewayToken: string | undefined;
-  model: string;
   transport: 'stdio' | 'sse';
   port: number;
   host: string;
@@ -19,29 +14,11 @@ export interface CliArgs {
   redirectUris: string[] | undefined;
   allowDcr: boolean;
   trustProxy: string | undefined;
-  instances: InstanceConfig[];
 }
 
 export function parseArguments(version: string): CliArgs {
   const argv = yargs(hideBin(process.argv))
     .version(version)
-    .option('openclaw-url', {
-      alias: 'u',
-      type: 'string',
-      description: 'OpenClaw gateway URL',
-      default: process.env.OPENCLAW_URL || DEFAULT_OPENCLAW_URL,
-    })
-    .option('gateway-token', {
-      type: 'string',
-      description: 'Bearer token for OpenClaw gateway authentication',
-      default: process.env.OPENCLAW_GATEWAY_TOKEN || undefined,
-    })
-    .option('model', {
-      alias: 'm',
-      type: 'string',
-      description: 'Model name for chat completions',
-      default: process.env.OPENCLAW_MODEL || DEFAULT_MODEL,
-    })
     .option('transport', {
       alias: 't',
       type: 'string',
@@ -63,7 +40,7 @@ export function parseArguments(version: string): CliArgs {
     .option('timeout', {
       type: 'number',
       description: 'Request timeout in milliseconds',
-      default: parseInt(process.env.OPENCLAW_TIMEOUT_MS || '120000', 10),
+      default: parseInt(process.env.AUTHORCLAW_TIMEOUT_MS || process.env.OPENCLAW_TIMEOUT_MS || '120000', 10),
     })
     .option('debug', {
       type: 'boolean',
@@ -110,55 +87,7 @@ export function parseArguments(version: string): CliArgs {
     .help()
     .parseSync();
 
-  // Build instance configs: OPENCLAW_INSTANCES takes precedence, otherwise single-instance from existing env vars
-  let instances: InstanceConfig[];
-  const instancesEnv = process.env.OPENCLAW_INSTANCES;
-
-  if (instancesEnv) {
-    try {
-      const parsed = JSON.parse(instancesEnv);
-      if (!Array.isArray(parsed) || parsed.length === 0) {
-        throw new Error('OPENCLAW_INSTANCES must be a non-empty JSON array');
-      }
-      // Validate each item has required fields
-      for (const item of parsed) {
-        if (!item || typeof item.name !== 'string' || !item.name.trim()) {
-          throw new Error(
-            'Each instance in OPENCLAW_INSTANCES must have a non-empty string "name"'
-          );
-        }
-        if (typeof item.url !== 'string' || !item.url.trim()) {
-          throw new Error(`Instance "${item.name}": must have a non-empty string "url"`);
-        }
-      }
-      // Apply global timeout fallback for instances that don't specify their own
-      instances = (parsed as InstanceConfig[]).map((cfg) => ({
-        ...cfg,
-        timeout: cfg.timeout ?? argv.timeout,
-      }));
-    } catch (error) {
-      if (error instanceof SyntaxError) {
-        throw new Error(`OPENCLAW_INSTANCES contains invalid JSON: ${error.message}`);
-      }
-      throw error;
-    }
-  } else {
-    // Backward-compatible: single instance from existing env vars / CLI args
-    instances = [
-      {
-        name: 'default',
-        url: argv['openclaw-url'] as string,
-        token: argv['gateway-token'] as string | undefined,
-        timeout: argv.timeout,
-        default: true,
-      },
-    ];
-  }
-
   return {
-    openclawUrl: argv['openclaw-url'] as string,
-    gatewayToken: argv['gateway-token'] as string | undefined,
-    model: argv.model as string,
     transport: argv.transport as 'stdio' | 'sse',
     port: argv.port,
     host: argv.host,
@@ -176,6 +105,5 @@ export function parseArguments(version: string): CliArgs {
       : undefined,
     allowDcr: argv['allow-dcr'] as boolean,
     trustProxy: argv['trust-proxy'] as string | undefined,
-    instances,
   };
 }

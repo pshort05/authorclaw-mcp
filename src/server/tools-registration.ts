@@ -9,7 +9,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
-import type { InstanceRegistry } from '../openclaw/registry.js';
 import { SERVER_ICON_SVG_BASE64 } from '../config/constants.js';
 import { log, logError } from '../utils/logger.js';
 import { AuthorClawClient } from '../client/authorclaw.js';
@@ -38,7 +37,6 @@ import {
 } from '../mcp/tools/tasks.js';
 
 export interface ToolRegistrationDeps {
-  registry: InstanceRegistry;
   serverName: string;
   serverVersion: string;
 }
@@ -69,8 +67,7 @@ export function createMcpServer(deps: ToolRegistrationDeps): Server {
 /**
  * Register all AuthorClaw tools on an existing MCP Server instance.
  */
-function registerTools(server: Server, deps: ToolRegistrationDeps): void {
-  const { registry } = deps;
+function registerTools(server: Server, _deps: ToolRegistrationDeps): void {
   const authorClawClient = new AuthorClawClient();
 
   const allTools = [
@@ -147,13 +144,13 @@ function registerTools(server: Server, deps: ToolRegistrationDeps): void {
         return await dispatchSeriesTool(name, args, authorClawClient);
       }
       if (name === 'authorclaw_task_status') {
-        return await handleOpenclawTaskStatus(registry, toolArgs);
+        return await handleOpenclawTaskStatus(toolArgs);
       }
       if (name === 'authorclaw_task_list') {
-        return await handleOpenclawTaskList(registry, toolArgs);
+        return await handleOpenclawTaskList(toolArgs);
       }
       if (name === 'authorclaw_task_cancel') {
-        return await handleOpenclawTaskCancel(registry, toolArgs);
+        return await handleOpenclawTaskCancel(toolArgs);
       }
       throw new Error(`Unknown tool: ${name}`);
     } catch (error) {

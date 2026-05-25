@@ -3,7 +3,6 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { SERVER_NAME, SERVER_VERSION } from './config/constants.js';
 import { log, logError, setDebugEnabled } from './utils/logger.js';
 import { parseArguments } from './cli.js';
-import { InstanceRegistry } from './openclaw/registry.js';
 import { createMcpServer, type ToolRegistrationDeps } from './server/tools-registration.js';
 import { createSSEServer, parseTrustProxy, type SSEServerConfig } from './server/sse.js';
 
@@ -13,37 +12,18 @@ const args = parseArguments(SERVER_VERSION);
 // Enable debug logging if requested
 setDebugEnabled(args.debug);
 
-// Validate model name
-const trimmedModel = args.model.trim();
-if (!trimmedModel) {
-  logError('OPENCLAW_MODEL / --model must be a non-empty string. Default is "openclaw".');
-  process.exit(1);
-}
-args.model = trimmedModel;
-
-// Create instance registry (single or multi-instance)
-const registry = new InstanceRegistry(args.instances, args.model);
-
 // Shared dependencies for tool registration
 const deps: ToolRegistrationDeps = {
-  registry,
   serverName: SERVER_NAME,
   serverVersion: SERVER_VERSION,
 };
 
 async function main() {
   log(`Starting ${SERVER_NAME} v${SERVER_VERSION}`);
-  log(`Model: ${args.model}`);
   log(`Transport: ${args.transport}`);
   log(`Request timeout: ${args.timeout}ms`);
   if (args.debug) {
     log('Debug logging: enabled');
-  }
-
-  // Log instance configuration
-  for (const instance of registry.list()) {
-    const defaultLabel = instance.isDefault ? ' (default)' : '';
-    log(`Instance "${instance.name}": ${instance.url}${defaultLabel}`);
   }
 
   if (args.transport === 'sse') {
@@ -124,7 +104,7 @@ async function main() {
     const server = createMcpServer(deps);
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    log('OpenClaw MCP server running on stdio');
+    log('AuthorClaw MCP server running on stdio');
   }
 }
 

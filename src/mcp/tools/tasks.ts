@@ -1,47 +1,17 @@
 /**
- * Async Task Tools for OpenClaw MCP
+ * Async Task Tools for AuthorClaw MCP
  *
  * Provides async/background task management for long-running operations.
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { InstanceRegistry } from '../../openclaw/registry.js';
 import { successResponse, errorResponse, type ToolResponse } from '../../utils/response-helpers.js';
-import { taskManager, type Task, type TaskStatus } from '../tasks/manager.js';
-import { log } from '../../utils/logger.js';
-import { validateInputIsObject, validateMessage, validateId } from '../../utils/validation.js';
+import { taskManager, type TaskStatus } from '../tasks/manager.js';
+import { validateInputIsObject, validateId } from '../../utils/validation.js';
 
 // ============================================================================
 // Tool Definitions
 // ============================================================================
-
-export const openclawChatAsyncTool: Tool = {
-  name: 'openclaw_chat_async',
-  description:
-    'Send a message to OpenClaw asynchronously. Returns a task_id immediately that can be polled for results. Use this for potentially long-running conversations.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      message: {
-        type: 'string',
-        description: 'The message to send to OpenClaw',
-      },
-      session_id: {
-        type: 'string',
-        description: 'Optional session ID for conversation context',
-      },
-      priority: {
-        type: 'number',
-        description: 'Task priority (higher = processed first). Default: 0',
-      },
-      instance: {
-        type: 'string',
-        description: 'Target OpenClaw instance name. Defaults to the default instance.',
-      },
-    },
-    required: ['message'],
-  },
-};
 
 export const openclawTaskStatusTool: Tool = {
   name: 'authorclaw_task_status',
@@ -98,141 +68,10 @@ export const openclawTaskCancelTool: Tool = {
 };
 
 // ============================================================================
-// Background Task Processor
-// ============================================================================
-
-let processorRunning = false;
-let processorRegistry: InstanceRegistry | null = null;
-
-async function processTask(task: Task, registry: InstanceRegistry): Promise<void> {
-  taskManager.updateStatus(task.id, 'running');
-
-  let client;
-  try {
-    client = registry.resolve(task.instanceId).client;
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Instance not available';
-    taskManager.updateStatus(task.id, 'failed', undefined, errorMsg);
-    return;
-  }
-
-  try {
-    const input = task.input as { message: string; session_id?: string };
-    const response = await client.chat(input.message, input.session_id);
-    taskManager.updateStatus(task.id, 'completed', response.response);
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    taskManager.updateStatus(task.id, 'failed', undefined, errorMsg);
-  }
-}
-
-async function taskProcessor(): Promise<void> {
-  if (!processorRegistry) return;
-
-  while (processorRunning) {
-    const task = taskManager.getNextPending();
-
-    if (task) {
-      await processTask(task, processorRegistry);
-    } else {
-      // No pending tasks, wait a bit
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-  }
-}
-
-export function startTaskProcessor(registry: InstanceRegistry): void {
-  if (processorRunning) return;
-
-  processorRegistry = registry;
-  processorRunning = true;
-  taskProcessor().catch(() => {
-    processorRunning = false;
-  });
-  log('Task processor started');
-}
-
-// ============================================================================
 // Tool Handlers
 // ============================================================================
 
-export async function handleOpenclawChatAsync(
-  registry: InstanceRegistry,
-  input: unknown
-): Promise<ToolResponse> {
-  if (!validateInputIsObject(input)) {
-    return errorResponse('Invalid input: expected an object');
-  }
-
-  const msgResult = validateMessage(input.message);
-  if (msgResult.valid === false) {
-    return errorResponse(msgResult.error);
-  }
-
-  let sessionId: string | undefined;
-  if (input.session_id !== undefined) {
-    const sidResult = validateId(input.session_id, 'session_id');
-    if (sidResult.valid === false) {
-      return errorResponse(sidResult.error);
-    }
-    sessionId = sidResult.value;
-  }
-
-  let priority = 0;
-  if (input.priority !== undefined) {
-    if (typeof input.priority !== 'number' || !Number.isInteger(input.priority)) {
-      return errorResponse('priority must be an integer');
-    }
-    priority = input.priority;
-  }
-
-  // Resolve instance name (validate it exists before queueing)
-  let instanceId: string;
-  try {
-    let instanceName: string | undefined;
-    if (input.instance !== undefined) {
-      const instResult = validateId(input.instance, 'instance');
-      if (instResult.valid === false) {
-        return errorResponse(instResult.error);
-      }
-      instanceName = instResult.value;
-    }
-    const resolved = registry.resolve(instanceName);
-    instanceId = resolved.name;
-  } catch (error) {
-    return errorResponse(error instanceof Error ? error.message : 'Invalid instance');
-  }
-
-  // Ensure processor is running
-  startTaskProcessor(registry);
-
-  // Create task
-  const task = taskManager.create({
-    type: 'chat',
-    input: { message: msgResult.value, session_id: sessionId },
-    sessionId,
-    priority,
-    instanceId,
-  });
-
-  return successResponse(
-    JSON.stringify(
-      {
-        task_id: task.id,
-        status: task.status,
-        instance: instanceId,
-        message: 'Task queued. Use authorclaw_task_status to check progress.',
-      },
-      null,
-      2
-    )
-  );
-}
-
-export async function handleOpenclawTaskStatus(
-  _registry: InstanceRegistry,
-  input: unknown
-): Promise<ToolResponse> {
+export async function handleOpenclawTaskStatus(input: unknown): Promise<ToolResponse> {
   if (!validateInputIsObject(input)) {
     return errorResponse('Invalid input: expected an object');
   }
@@ -280,10 +119,7 @@ const VALID_TASK_STATUSES: readonly TaskStatus[] = [
   'cancelled',
 ];
 
-export async function handleOpenclawTaskList(
-  _registry: InstanceRegistry,
-  input: unknown
-): Promise<ToolResponse> {
+export async function handleOpenclawTaskList(input: unknown): Promise<ToolResponse> {
   if (!validateInputIsObject(input)) {
     return errorResponse('Invalid input: expected an object');
   }
@@ -342,10 +178,7 @@ export async function handleOpenclawTaskList(
   );
 }
 
-export async function handleOpenclawTaskCancel(
-  _registry: InstanceRegistry,
-  input: unknown
-): Promise<ToolResponse> {
+export async function handleOpenclawTaskCancel(input: unknown): Promise<ToolResponse> {
   if (!validateInputIsObject(input)) {
     return errorResponse('Invalid input: expected an object');
   }

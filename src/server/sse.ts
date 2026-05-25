@@ -22,7 +22,7 @@ import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js
 import { mcpAuthRouter } from '@modelcontextprotocol/sdk/server/auth/router.js';
 import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 
-import { OpenClawAuthProvider, type AuthProviderConfig } from '../auth/provider.js';
+import { AuthorClawAuthProvider, type AuthProviderConfig } from '../auth/provider.js';
 import { log, logError } from '../utils/logger.js';
 import { createMcpServer, type ToolRegistrationDeps } from './tools-registration.js';
 
@@ -186,7 +186,7 @@ export async function createSSEServer(
   let authMiddleware: ((req: Request, res: Response, next: NextFunction) => void) | undefined;
 
   if (authEnabled) {
-    const provider = new OpenClawAuthProvider(config.authConfig!);
+    const provider = new AuthorClawAuthProvider(config.authConfig!);
     const issuerUrl = config.issuerUrl
       ? new URL(config.issuerUrl)
       : new URL(`http://${config.host === '0.0.0.0' ? 'localhost' : config.host}:${config.port}`);
