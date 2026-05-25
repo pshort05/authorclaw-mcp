@@ -1,0 +1,118 @@
+# Changelog
+
+Notable changes per release. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- New top-level `CHANGELOG.md` (this file).
+- New `docs/development.md` covering build, test, smoke-test, and release.
+- Substantially expanded top-level `README.md`: status table, architecture diagram, configuration overview, documentation index, compatibility matrix.
+
+### Changed
+
+- All documentation rewritten without em or en dashes for a consistent style.
+- `docs/installation.md` expanded with troubleshooting and verification.
+- `docs/configuration.md` expanded with an annotated `.env` walkthrough and per-section context.
+
+## [0.2.3] 2026-05-25
+
+### Added
+
+- Bundled `authorclaw-docker-fix/` as an integrated optional component with its own `README.md` and `INSTALL.md`. Mirrors the standalone [pshort05/authorclaw-docker-fix](https://github.com/pshort05/authorclaw-docker-fix) repo so the Docker Compose stack can apply the LAN patch without a separate clone.
+- New "Optional: AuthorClaw LAN Patch" section in the main `README.md` explaining when the patch is needed.
+
+### Changed
+
+- `apply-lan-patch.sh` moved from `scripts/` to `authorclaw-docker-fix/` (preserved via git rename).
+- `docker-compose.yml` bind-mount path updated to the new location.
+- Removed the empty `scripts/` directory.
+
+## [0.2.2] 2026-05-25
+
+### Removed
+
+- Final remaining openclaw-mcp upstream artifacts. After this release, `grep -rin openclaw src/` returns zero hits.
+  - `config.openclaw` and the `OpenClawConfig` interface (the registry chain that consumed them was removed in v0.2.1).
+  - `DEFAULT_OPENCLAW_URL` and `DEFAULT_MODEL` constants.
+  - `src/utils/errors.ts` with its `OpenClawError`, `OpenClawConnectionError`, `OpenClawApiError` classes (zero production consumers).
+  - `OPENCLAW_TIMEOUT_MS` environment-variable fallback in `cli.ts`.
+  - The `[openclaw-mcp]` log prefix renamed to `[authorclaw-mcp]`.
+- Internal `openclawTaskStatusTool`, `openclawTaskListTool`, `openclawTaskCancelTool` exports and matching handler names renamed to drop the `openclaw` prefix. MCP tool names are unchanged.
+
+### Tests
+
+- 322 tests pass.
+
+## [0.2.1] 2026-05-25
+
+### Removed
+
+- Dead tool files imported from openclaw-mcp upstream:
+  - `src/mcp/tools/chat.ts`
+  - `src/mcp/tools/status.ts`
+  - `src/mcp/tools/instances.ts`
+  - `src/mcp/tools/index.ts`
+  - `src/openclaw/client.ts`
+  - `src/openclaw/registry.ts`
+  - `src/openclaw/types.ts`
+- Dead handlers inside `src/mcp/tools/tasks.ts`: `openclawChatAsyncTool`, `handleOpenclawChatAsync`, `processTask`, `startTaskProcessor`, `processorRegistry`.
+- The `InstanceRegistry` chain across `cli.ts`, `src/index.ts`, and `src/server/tools-registration.ts`. The `--instance` CLI option, `InstanceConfig` type, and `registry: InstanceRegistry` parameter on the task handlers are gone.
+
+### Changed
+
+- `OpenClawAuthProvider` and `OpenClawClientsStore` in `src/auth/provider.ts` renamed to `AuthorClawAuthProvider` and `AuthorClawClientsStore`. Internal OAuth client name string updated.
+
+## [0.2.0] 2026-05-25
+
+### Added
+
+- 43 new MCP tools across 7 families, bringing the total to 57:
+  - 19 project-writing tools: `_execute`, `_run`, `_resume`, `_restart`, `_compile`, `_continuity_check`, `_continuity_report`, `_structure_check`, `_style_clone`, `_pacing_heatmap`, `_format_pro`, `_craft_critique`, `_dialogue_audit`, `_beta_reader`, `_cover_set`, plus 4 `_plot_promises_*` tools.
+  - 6 persona tools: `list`, `create`, `generate`, `get`, `update`, `delete`.
+  - 6 advanced-research tools: `lookup`, `comp_authors`, `agents`, `newsletters`, `podcasts`, `reviewers`.
+  - 3 audio tools: `voices`, `generate`, `get`.
+  - 3 image tools: `generate`, `book_cover`, `cover_set`.
+  - 4 series tools: `list`, `create`, `delete`, `report`.
+  - 2 document tools: `upload`, `delete`.
+- 44 new methods on `AuthorClawClient` wrapping the corresponding endpoints.
+- `docs/endpoint-coverage.md`: every one of AuthorClaw v4.0.0's 231 `/api/*` endpoints categorized as wrapped, skipped (with rationale), or security-skipped.
+
+### Tests
+
+- 365 tests pass.
+
+## [0.1.1] 2026-05-24
+
+### Fixed
+
+- Aligned client paths and bodies with AuthorClaw v4.0.0 after live verification:
+  - `chat` response field renamed from `reply` to `response`.
+  - `createProject` now POSTs to `/api/projects/create` with `{ title, description }` (was `{ task }` to `/api/projects`).
+  - `stopProject` now POSTs to `/api/projects/:id/pause` (was `/stop`).
+  - `listProjects` now GETs `/api/projects/list` and unwraps the `{ projects: [] }` envelope.
+  - `listFiles` now GETs `/api/documents` and unwraps the `{ documents: [] }` envelope. The optional `folder` parameter was removed.
+  - `readFile` and `exportFile` now require a `project_id` parameter because the real endpoints are project-scoped (`/api/projects/:id/download/:filename` and `/api/projects/:id/export-docx`).
+  - `research` body shape changed from `{ topic }` to `{ query }`.
+
+## [0.1.0] 2026-05-24
+
+Initial public release.
+
+### Added
+
+- 14 MCP tools covering chat, projects, files, research, status, and the async task queue.
+- `AuthorClawClient` wrapping 10 AuthorClaw REST endpoints.
+- OAuth 2.1 plus SSE transport scaffolding forked from [freema/openclaw-mcp](https://github.com/freema/openclaw-mcp).
+- Three-service Docker Compose stack with an `authorclaw-patcher` init container that applies the LAN patch before the gateway starts.
+- Complete rebrand from `openclaw-mcp` to `authorclaw-mcp`: package metadata, server identity, configuration variables, MCP registry manifest, security policy, Docker image labels.
+- `docs/ARCHITECTURE.md`, `docs/installation.md`, `docs/configuration.md`, `docs/threat-model.md`.
+
+[Unreleased]: https://github.com/pshort05/authorclaw-mcp/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.3
+[0.2.2]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.2
+[0.2.1]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.1
+[0.2.0]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.0
+[0.1.1]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.1.1
+[0.1.0]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.1.0

@@ -4,10 +4,10 @@ This document maps every `/api/*` endpoint in AuthorClaw v4.0.0 to its status
 in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/src/api/routes.ts`.
 
 **Legend:**
-- ✅ Wrapped — exposed as one or more MCP tools (in v0.1 or v0.2)
-- ⏭️ Skipped — out of scope for an MCP writing agent; rationale given
-- 🔒 Security-skipped — exposes credentials, internal config, or admin surface
-- ❓ Doesn't exist — was assumed in the original ARCHITECTURE.md but is absent in v4.0.0
+- `Wrapped` - exposed as one or more MCP tools (in v0.1 or v0.2)
+- `Skipped` - out of scope for an MCP writing agent; rationale given
+- `Security-skipped` - exposes credentials, internal config, or admin surface
+- `Missing` - was assumed in the original ARCHITECTURE.md but is absent in v4.0.0
 
 ---
 
@@ -15,10 +15,10 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/health | ✅ v0.1 | `authorclaw_status` |
-| GET | /api/status | ⏭️ Skipped v0.2 | Verbose internal dashboard dump (soul, providers, costs, skills, heartbeat). Useful to admins; too noisy for a writing agent. Skipped for v0.2; consider a read-only `authorclaw_server_status` in v0.3. |
-| GET | /api/costs | ⏭️ Skipped v0.2 | Operator cost dashboard. Not part of a writing workflow. |
-| GET | /api/hub | ⏭️ Skipped v0.2 | Aggregated manuscript hub stats — dashboard concern, not a workflow tool. |
+| GET | /api/health | Wrapped v0.1 | `authorclaw_status` |
+| GET | /api/status | Skipped v0.2 | Verbose internal dashboard dump (soul, providers, costs, skills, heartbeat). Useful to admins; too noisy for a writing agent. Skipped for v0.2; consider a read-only `authorclaw_server_status` in v0.3. |
+| GET | /api/costs | Skipped v0.2 | Operator cost dashboard. Not part of a writing workflow. |
+| GET | /api/hub | Skipped v0.2 | Aggregated manuscript hub stats : dashboard concern, not a workflow tool. |
 
 ---
 
@@ -26,7 +26,7 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| POST | /api/chat | ✅ v0.1 | `authorclaw_chat`, `authorclaw_chat_async` |
+| POST | /api/chat | Wrapped v0.1 | `authorclaw_chat`, `authorclaw_chat_async` |
 
 ---
 
@@ -34,9 +34,9 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/documents | ✅ v0.1 | `authorclaw_files_list` |
-| POST | /api/documents/upload | ✅ v0.2 | `authorclaw_documents_upload` (new) |
-| DELETE | /api/documents/:filename | ✅ v0.2 | `authorclaw_documents_delete` (new) |
+| GET | /api/documents | Wrapped v0.1 | `authorclaw_files_list` |
+| POST | /api/documents/upload | Wrapped v0.2 | `authorclaw_documents_upload` (new) |
+| DELETE | /api/documents/:filename | Wrapped v0.2 | `authorclaw_documents_delete` (new) |
 
 ---
 
@@ -46,95 +46,95 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/projects | ⏭️ Skipped v0.2 | Returns bare directory listing; `GET /api/projects/list` (engine-based) is richer and already wrapped. |
-| GET | /api/projects/list | ✅ v0.1 | `authorclaw_project_list` |
-| GET | /api/projects/:id | ✅ v0.1 | `authorclaw_project_status` |
-| POST | /api/projects/create | ✅ v0.1 | `authorclaw_project_create` |
-| DELETE | /api/projects/:id | ⏭️ Skipped v0.2 | Destructive — no safe-delete UX exists in MCP context. Document for v0.3. |
-| POST | /api/projects/:id/start | ⏭️ Skipped v0.2 | Internal plumbing; `execute` is the user-facing step driver. |
-| POST | /api/projects/:id/execute | ✅ v0.2 | `authorclaw_project_execute` (new) — runs the currently active step and returns the AI response. |
-| POST | /api/projects/:id/auto-execute | ✅ v0.2 | `authorclaw_project_run` (new) — fully autonomous execution of all pending steps. |
-| POST | /api/projects/:id/resume | ✅ v0.2 | `authorclaw_project_resume` (new) — re-activates a stuck or paused project. |
-| POST | /api/projects/:id/restart | ✅ v0.2 | `authorclaw_project_restart` (new) — resets failed/active steps so the project can re-run. |
-| POST | /api/projects/:id/pause | ✅ v0.1 | `authorclaw_project_stop` |
-| POST | /api/projects/:id/skip/:stepId | ⏭️ Skipped v0.2 | Step-level surgery. Useful but niche — document for v0.3. |
-| POST | /api/projects/:id/steps/:stepId/retry | ⏭️ Skipped v0.2 | Step-level surgery. Useful but niche — document for v0.3. |
-| POST | /api/projects/:id/provider | ⏭️ Skipped v0.2 | Sets a project's preferred AI provider. Config tweak, not writing workflow. |
-| POST | /api/projects/:id/upload | ⏭️ Skipped v0.2 | Project-level file upload (attaches manuscript to a project). Requires multipart; MCP tools work better with base64 or library-first upload. Pair with `authorclaw_documents_upload` instead. Document for v0.3. |
+| GET | /api/projects | Skipped v0.2 | Returns bare directory listing; `GET /api/projects/list` (engine-based) is richer and already wrapped. |
+| GET | /api/projects/list | Wrapped v0.1 | `authorclaw_project_list` |
+| GET | /api/projects/:id | Wrapped v0.1 | `authorclaw_project_status` |
+| POST | /api/projects/create | Wrapped v0.1 | `authorclaw_project_create` |
+| DELETE | /api/projects/:id | Skipped v0.2 | Destructive : no safe-delete UX exists in MCP context. Document for v0.3. |
+| POST | /api/projects/:id/start | Skipped v0.2 | Internal plumbing; `execute` is the user-facing step driver. |
+| POST | /api/projects/:id/execute | Wrapped v0.2 | `authorclaw_project_execute` (new) : runs the currently active step and returns the AI response. |
+| POST | /api/projects/:id/auto-execute | Wrapped v0.2 | `authorclaw_project_run` (new) : fully autonomous execution of all pending steps. |
+| POST | /api/projects/:id/resume | Wrapped v0.2 | `authorclaw_project_resume` (new) : re-activates a stuck or paused project. |
+| POST | /api/projects/:id/restart | Wrapped v0.2 | `authorclaw_project_restart` (new) : resets failed/active steps so the project can re-run. |
+| POST | /api/projects/:id/pause | Wrapped v0.1 | `authorclaw_project_stop` |
+| POST | /api/projects/:id/skip/:stepId | Skipped v0.2 | Step-level surgery. Useful but niche : document for v0.3. |
+| POST | /api/projects/:id/steps/:stepId/retry | Skipped v0.2 | Step-level surgery. Useful but niche : document for v0.3. |
+| POST | /api/projects/:id/provider | Skipped v0.2 | Sets a project's preferred AI provider. Config tweak, not writing workflow. |
+| POST | /api/projects/:id/upload | Skipped v0.2 | Project-level file upload (attaches manuscript to a project). Requires multipart; MCP tools work better with base64 or library-first upload. Pair with `authorclaw_documents_upload` instead. Document for v0.3. |
 
 ### Project file management
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/projects/:id/files | ✅ v0.1 | `authorclaw_files_list` (lists project output files) |
-| GET | /api/projects/:id/download/:filename | ✅ v0.1 | `authorclaw_files_read` |
-| POST | /api/projects/:id/export-docx | ✅ v0.1 | `authorclaw_files_export` |
-| POST | /api/projects/:id/compile | ✅ v0.2 | `authorclaw_project_compile` (new) — combines all step outputs into manuscript.md + .docx + .epub. |
-| GET | /api/projects/:id/context | ⏭️ Skipped v0.2 | Internal context engine data (summaries + entities). Observability tool, not writing tool. |
+| GET | /api/projects/:id/files | Wrapped v0.1 | `authorclaw_files_list` (lists project output files) |
+| GET | /api/projects/:id/download/:filename | Wrapped v0.1 | `authorclaw_files_read` |
+| POST | /api/projects/:id/export-docx | Wrapped v0.1 | `authorclaw_files_export` |
+| POST | /api/projects/:id/compile | Wrapped v0.2 | `authorclaw_project_compile` (new) : combines all step outputs into manuscript.md + .docx + .epub. |
+| GET | /api/projects/:id/context | Skipped v0.2 | Internal context engine data (summaries + entities). Observability tool, not writing tool. |
 
 ### Templates
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/projects/templates | ⏭️ Skipped v0.2 | Dashboard-facing template catalog. Not directly useful as MCP tool. |
-| POST | /api/projects/templates | ⏭️ Skipped v0.2 | Create custom template. Dashboard concern. |
-| DELETE | /api/projects/templates/:id | ⏭️ Skipped v0.2 | Delete custom template. Dashboard concern. |
+| GET | /api/projects/templates | Skipped v0.2 | Dashboard-facing template catalog. Not directly useful as MCP tool. |
+| POST | /api/projects/templates | Skipped v0.2 | Create custom template. Dashboard concern. |
+| DELETE | /api/projects/templates/:id | Skipped v0.2 | Delete custom template. Dashboard concern. |
 
 ### Analysis and editorial tools
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| POST | /api/projects/:id/continuity-check | ✅ v0.2 | `authorclaw_project_continuity_check` (new) — async continuity check; responds immediately, progress via socket. |
-| GET | /api/projects/:id/continuity-report | ✅ v0.2 | `authorclaw_project_continuity_report` (new) — fetch the stored continuity report. |
-| POST | /api/projects/:id/structure-check | ✅ v0.2 | `authorclaw_project_structure_check` (new) — compare project outline against story structure frameworks. |
-| POST | /api/projects/:id/style-clone | ✅ v0.2 | `authorclaw_project_style_clone` (new) — analyze the project's manuscript for style fingerprint. |
-| POST | /api/projects/:id/pacing-heatmap | ✅ v0.2 | `authorclaw_project_pacing_heatmap` (new) — manuscript autopsy: tension/pacing analysis. |
-| POST | /api/projects/:id/format-pro | ✅ v0.2 | `authorclaw_project_format_pro` (new) — format manuscript as docx/epub/pdf via external formatter. |
-| POST | /api/projects/:id/craft-critique | ✅ v0.2 | `authorclaw_project_craft_critique` (new) — mechanical craft analysis of completed chapters. |
-| POST | /api/projects/:id/dialogue-audit | ✅ v0.2 | `authorclaw_project_dialogue_audit` (new) — analyse dialogue across manuscript for authenticity issues. |
-| POST | /api/projects/:id/beta-reader | ✅ v0.2 | `authorclaw_project_beta_reader` (new) — run simulated beta-reader panel on completed chapters. |
-| GET | /api/projects/:id/beta-reader/report | ✅ v0.2 | Covered by `authorclaw_project_beta_reader` — returns stored report if already run. |
-| POST | /api/projects/:id/export-blurb | ⏭️ Skipped v0.2 | KDP-formatted blurb export. Niche; document for v0.3. |
+| POST | /api/projects/:id/continuity-check | Wrapped v0.2 | `authorclaw_project_continuity_check` (new) : async continuity check; responds immediately, progress via socket. |
+| GET | /api/projects/:id/continuity-report | Wrapped v0.2 | `authorclaw_project_continuity_report` (new) : fetch the stored continuity report. |
+| POST | /api/projects/:id/structure-check | Wrapped v0.2 | `authorclaw_project_structure_check` (new) : compare project outline against story structure frameworks. |
+| POST | /api/projects/:id/style-clone | Wrapped v0.2 | `authorclaw_project_style_clone` (new) : analyze the project's manuscript for style fingerprint. |
+| POST | /api/projects/:id/pacing-heatmap | Wrapped v0.2 | `authorclaw_project_pacing_heatmap` (new) : manuscript autopsy: tension/pacing analysis. |
+| POST | /api/projects/:id/format-pro | Wrapped v0.2 | `authorclaw_project_format_pro` (new) : format manuscript as docx/epub/pdf via external formatter. |
+| POST | /api/projects/:id/craft-critique | Wrapped v0.2 | `authorclaw_project_craft_critique` (new) : mechanical craft analysis of completed chapters. |
+| POST | /api/projects/:id/dialogue-audit | Wrapped v0.2 | `authorclaw_project_dialogue_audit` (new) : analyse dialogue across manuscript for authenticity issues. |
+| POST | /api/projects/:id/beta-reader | Wrapped v0.2 | `authorclaw_project_beta_reader` (new) : run simulated beta-reader panel on completed chapters. |
+| GET | /api/projects/:id/beta-reader/report | Wrapped v0.2 | Covered by `authorclaw_project_beta_reader` : returns stored report if already run. |
+| POST | /api/projects/:id/export-blurb | Skipped v0.2 | KDP-formatted blurb export. Niche; document for v0.3. |
 
 ### Cover art
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| POST | /api/projects/:id/cover-set | ✅ v0.2 | `authorclaw_project_cover_set` (new) — generate full set of cover sizes auto-filled from project metadata. |
+| POST | /api/projects/:id/cover-set | Wrapped v0.2 | `authorclaw_project_cover_set` (new) : generate full set of cover sizes auto-filled from project metadata. |
 
 ### Plot promises
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/projects/:id/plot-promises | ✅ v0.2 | `authorclaw_plot_promises_list` (new) |
-| POST | /api/projects/:id/plot-promises | ✅ v0.2 | `authorclaw_plot_promises_add` (new) |
-| POST | /api/projects/:id/plot-promises/extract | ✅ v0.2 | `authorclaw_plot_promises_extract` (new) — AI extracts promises from opening chapters. |
-| GET | /api/projects/:id/plot-promises/audit | ✅ v0.2 | `authorclaw_plot_promises_audit` (new) — flag open promises at risk of going unpaid. |
-| PATCH | /api/projects/:id/plot-promises/:promiseId | ⏭️ Skipped v0.2 | Fine-grained promise editing. Cover via extract+audit in v0.2; direct edit in v0.3. |
-| DELETE | /api/projects/:id/plot-promises/:promiseId | ⏭️ Skipped v0.2 | Destructive. Document for v0.3. |
+| GET | /api/projects/:id/plot-promises | Wrapped v0.2 | `authorclaw_plot_promises_list` (new) |
+| POST | /api/projects/:id/plot-promises | Wrapped v0.2 | `authorclaw_plot_promises_add` (new) |
+| POST | /api/projects/:id/plot-promises/extract | Wrapped v0.2 | `authorclaw_plot_promises_extract` (new) : AI extracts promises from opening chapters. |
+| GET | /api/projects/:id/plot-promises/audit | Wrapped v0.2 | `authorclaw_plot_promises_audit` (new) : flag open promises at risk of going unpaid. |
+| PATCH | /api/projects/:id/plot-promises/:promiseId | Skipped v0.2 | Fine-grained promise editing. Cover via extract+audit in v0.2; direct edit in v0.3. |
+| DELETE | /api/projects/:id/plot-promises/:promiseId | Skipped v0.2 | Destructive. Document for v0.3. |
 
 ### Audiobook
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| POST | /api/projects/:id/audiobook/cleanup | ⏭️ Skipped v0.2 | Narration script cleanup. Useful but niche; deferred to v0.3. |
-| POST | /api/projects/:id/audiobook/pronunciation | ⏭️ Skipped v0.2 | Pronunciation dictionary. Niche; v0.3. |
-| POST | /api/projects/:id/audiobook/ssml | ⏭️ Skipped v0.2 | SSML generation. Niche; v0.3. |
-| POST | /api/projects/:id/audiobook/attribute | ⏭️ Skipped v0.2 | Multi-voice attribution. Niche; v0.3. |
+| POST | /api/projects/:id/audiobook/cleanup | Skipped v0.2 | Narration script cleanup. Useful but niche; deferred to v0.3. |
+| POST | /api/projects/:id/audiobook/pronunciation | Skipped v0.2 | Pronunciation dictionary. Niche; v0.3. |
+| POST | /api/projects/:id/audiobook/ssml | Skipped v0.2 | SSML generation. Niche; v0.3. |
+| POST | /api/projects/:id/audiobook/attribute | Skipped v0.2 | Multi-voice attribution. Niche; v0.3. |
 
 ### Character voices
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/projects/:id/character-voices | ⏭️ Skipped v0.2 | Character voice fingerprints. Interesting but complex setup; v0.3. |
-| POST | /api/projects/:id/character-voices/ingest | ⏭️ Skipped v0.2 | Ingest chapter for voice corpus. Niche; v0.3. |
-| POST | /api/projects/:id/character-voices/detect-drift | ⏭️ Skipped v0.2 | Detect voice drift. Niche; v0.3. |
+| GET | /api/projects/:id/character-voices | Skipped v0.2 | Character voice fingerprints. Interesting but complex setup; v0.3. |
+| POST | /api/projects/:id/character-voices/ingest | Skipped v0.2 | Ingest chapter for voice corpus. Niche; v0.3. |
+| POST | /api/projects/:id/character-voices/detect-drift | Skipped v0.2 | Detect voice drift. Niche; v0.3. |
 
 ### Auto-skill drafts (project-scoped)
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| POST | /api/projects/:id/draft-skill | ⏭️ Skipped v0.2 | Generates a SKILL.md from a project's outputs. Operator/developer feature; not a writing workflow. |
+| POST | /api/projects/:id/draft-skill | Skipped v0.2 | Generates a SKILL.md from a project's outputs. Operator/developer feature; not a writing workflow. |
 
 ---
 
@@ -142,8 +142,8 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| POST | /api/pipeline/create | ⏭️ Skipped v0.2 | Creates a multi-phase novel pipeline (6 linked projects). Complex setup; covered by `authorclaw_project_create` with `type: novel-pipeline`. Document standalone tool for v0.3. |
-| GET | /api/pipeline/:pipelineId | ⏭️ Skipped v0.2 | Pipeline phase status. Covered by `authorclaw_project_status` per phase. Document for v0.3. |
+| POST | /api/pipeline/create | Skipped v0.2 | Creates a multi-phase novel pipeline (6 linked projects). Complex setup; covered by `authorclaw_project_create` with `type: novel-pipeline`. Document standalone tool for v0.3. |
+| GET | /api/pipeline/:pipelineId | Skipped v0.2 | Pipeline phase status. Covered by `authorclaw_project_status` per phase. Document for v0.3. |
 
 ---
 
@@ -151,13 +151,13 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/personas | ✅ v0.2 | `authorclaw_personas_list` (new) |
-| POST | /api/personas | ✅ v0.2 | `authorclaw_personas_create` (new) |
-| POST | /api/personas/generate | ✅ v0.2 | `authorclaw_personas_generate` (new) — AI-assisted full persona generation from genre. |
-| GET | /api/personas/:id | ✅ v0.2 | `authorclaw_personas_get` (new) |
-| PUT | /api/personas/:id | ✅ v0.2 | `authorclaw_personas_update` (new) |
-| DELETE | /api/personas/:id | ✅ v0.2 | `authorclaw_personas_delete` (new) |
-| POST | /api/personas/:id/generate-bio | ✅ v0.2 | Covered by `authorclaw_personas_generate` (returns persona with bio); standalone bio regeneration folded into update. |
+| GET | /api/personas | Wrapped v0.2 | `authorclaw_personas_list` (new) |
+| POST | /api/personas | Wrapped v0.2 | `authorclaw_personas_create` (new) |
+| POST | /api/personas/generate | Wrapped v0.2 | `authorclaw_personas_generate` (new) : AI-assisted full persona generation from genre. |
+| GET | /api/personas/:id | Wrapped v0.2 | `authorclaw_personas_get` (new) |
+| PUT | /api/personas/:id | Wrapped v0.2 | `authorclaw_personas_update` (new) |
+| DELETE | /api/personas/:id | Wrapped v0.2 | `authorclaw_personas_delete` (new) |
+| POST | /api/personas/:id/generate-bio | Wrapped v0.2 | Covered by `authorclaw_personas_generate` (returns persona with bio); standalone bio regeneration folded into update. |
 
 ---
 
@@ -165,15 +165,15 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| POST | /api/research | ✅ v0.1 | `authorclaw_research` |
-| GET | /api/research/domains | ⏭️ Skipped v0.2 | Domain allowlist management. Operator config, not writing workflow. |
-| POST | /api/research/domains | ⏭️ Skipped v0.2 | Domain allowlist management. Operator config, not writing workflow. |
-| POST | /api/research/lookup | ✅ v0.2 | `authorclaw_research_lookup` (new) — sourced research via Perplexity with citation. |
-| POST | /api/research/comp-authors | ✅ v0.2 | `authorclaw_research_comp_authors` (new) — find comparable authors for a genre. |
-| POST | /api/research/agents | ✅ v0.2 | `authorclaw_research_agents` (new) — find literary agents for a genre. |
-| POST | /api/research/newsletters | ✅ v0.2 | `authorclaw_research_newsletters` (new) — find genre-appropriate newsletters. |
-| POST | /api/research/podcasts | ✅ v0.2 | `authorclaw_research_podcasts` (new) — find author podcasts for a genre. |
-| POST | /api/research/reviewers | ✅ v0.2 | `authorclaw_research_reviewers` (new) — find book reviewers for a genre. |
+| POST | /api/research | Wrapped v0.1 | `authorclaw_research` |
+| GET | /api/research/domains | Skipped v0.2 | Domain allowlist management. Operator config, not writing workflow. |
+| POST | /api/research/domains | Skipped v0.2 | Domain allowlist management. Operator config, not writing workflow. |
+| POST | /api/research/lookup | Wrapped v0.2 | `authorclaw_research_lookup` (new) : sourced research via Perplexity with citation. |
+| POST | /api/research/comp-authors | Wrapped v0.2 | `authorclaw_research_comp_authors` (new) : find comparable authors for a genre. |
+| POST | /api/research/agents | Wrapped v0.2 | `authorclaw_research_agents` (new) : find literary agents for a genre. |
+| POST | /api/research/newsletters | Wrapped v0.2 | `authorclaw_research_newsletters` (new) : find genre-appropriate newsletters. |
+| POST | /api/research/podcasts | Wrapped v0.2 | `authorclaw_research_podcasts` (new) : find author podcasts for a genre. |
+| POST | /api/research/reviewers | Wrapped v0.2 | `authorclaw_research_reviewers` (new) : find book reviewers for a genre. |
 
 ---
 
@@ -181,12 +181,12 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/audio/voices | ✅ v0.2 | `authorclaw_audio_voices` (new) — list all available TTS voices (Edge + ElevenLabs). |
-| GET | /api/audio/voice | ⏭️ Skipped v0.2 | Returns current active voice only; covered by voices list. |
-| POST | /api/audio/voice | ⏭️ Skipped v0.2 | Sets global default voice. Config operation; not a writing workflow step. |
-| POST | /api/audio/generate | ✅ v0.2 | `authorclaw_audio_generate` (new) — generate TTS audio from text. |
-| POST | /api/audio/config | ⏭️ Skipped v0.2 | Sets global TTS provider/voice. Config operation. |
-| GET | /api/audio/file/:filename | ✅ v0.2 | `authorclaw_audio_get` (new) — retrieve a generated audio file URL. |
+| GET | /api/audio/voices | Wrapped v0.2 | `authorclaw_audio_voices` (new) : list all available TTS voices (Edge + ElevenLabs). |
+| GET | /api/audio/voice | Skipped v0.2 | Returns current active voice only; covered by voices list. |
+| POST | /api/audio/voice | Skipped v0.2 | Sets global default voice. Config operation; not a writing workflow step. |
+| POST | /api/audio/generate | Wrapped v0.2 | `authorclaw_audio_generate` (new) : generate TTS audio from text. |
+| POST | /api/audio/config | Skipped v0.2 | Sets global TTS provider/voice. Config operation. |
+| GET | /api/audio/file/:filename | Wrapped v0.2 | `authorclaw_audio_get` (new) : retrieve a generated audio file URL. |
 
 ---
 
@@ -194,12 +194,12 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| POST | /api/images/generate | ✅ v0.2 | `authorclaw_images_generate` (new) — generate any image from a text prompt. |
-| POST | /api/images/book-cover | ✅ v0.2 | `authorclaw_images_book_cover` (new) — generate a single book cover image. |
-| POST | /api/images/cover-set | ✅ v0.2 | `authorclaw_images_cover_set` (new) — generate the full set of standard cover sizes in one call. |
-| GET | /api/images/cover-variants | ⏭️ Skipped v0.2 | Returns static spec list; not a tool — call internally if needed. |
-| GET | /api/images/providers | ⏭️ Skipped v0.2 | Lists available image providers. Config introspection; not a writing workflow step. |
-| GET | /api/images/:filename | ⏭️ Skipped v0.2 | Serves a generated image file. Images are referenced by URL in responses; no MCP tool needed. |
+| POST | /api/images/generate | Wrapped v0.2 | `authorclaw_images_generate` (new) : generate any image from a text prompt. |
+| POST | /api/images/book-cover | Wrapped v0.2 | `authorclaw_images_book_cover` (new) : generate a single book cover image. |
+| POST | /api/images/cover-set | Wrapped v0.2 | `authorclaw_images_cover_set` (new) : generate the full set of standard cover sizes in one call. |
+| GET | /api/images/cover-variants | Skipped v0.2 | Returns static spec list; not a tool : call internally if needed. |
+| GET | /api/images/providers | Skipped v0.2 | Lists available image providers. Config introspection; not a writing workflow step. |
+| GET | /api/images/:filename | Skipped v0.2 | Serves a generated image file. Images are referenced by URL in responses; no MCP tool needed. |
 
 ---
 
@@ -207,13 +207,13 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/series | ✅ v0.2 | `authorclaw_series_list` (new) |
-| POST | /api/series | ✅ v0.2 | `authorclaw_series_create` (new) |
-| DELETE | /api/series/:id | ✅ v0.2 | `authorclaw_series_delete` (new) |
-| GET | /api/series/:id/report | ✅ v0.2 | `authorclaw_series_report` (new) — build the series bible from linked projects. |
-| POST | /api/series/:id/add-project | ⏭️ Skipped v0.2 | Fold into `authorclaw_series_create` and `authorclaw_series_report`; direct project management in v0.3. |
-| POST | /api/series/:id/remove-project | ⏭️ Skipped v0.2 | Same as above. |
-| POST | /api/series/:id/reading-order | ⏭️ Skipped v0.2 | Set reading order array. Fine-grained; v0.3. |
+| GET | /api/series | Wrapped v0.2 | `authorclaw_series_list` (new) |
+| POST | /api/series | Wrapped v0.2 | `authorclaw_series_create` (new) |
+| DELETE | /api/series/:id | Wrapped v0.2 | `authorclaw_series_delete` (new) |
+| GET | /api/series/:id/report | Wrapped v0.2 | `authorclaw_series_report` (new) : build the series bible from linked projects. |
+| POST | /api/series/:id/add-project | Skipped v0.2 | Fold into `authorclaw_series_create` and `authorclaw_series_report`; direct project management in v0.3. |
+| POST | /api/series/:id/remove-project | Skipped v0.2 | Same as above. |
+| POST | /api/series/:id/reading-order | Skipped v0.2 | Set reading order array. Fine-grained; v0.3. |
 
 ---
 
@@ -221,8 +221,8 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| POST | /api/judge | ⏭️ Skipped v0.2 | Score arbitrary prose. Interesting but an internal quality gate; surfacing to MCP agents adds complexity without clear benefit for v0.2. Defer to v0.3. |
-| GET | /api/judge/screen | ⏭️ Skipped v0.2 | Mechanical prose screen (no AI cost). Same reasoning as above. |
+| POST | /api/judge | Skipped v0.2 | Score arbitrary prose. Interesting but an internal quality gate; surfacing to MCP agents adds complexity without clear benefit for v0.2. Defer to v0.3. |
+| GET | /api/judge/screen | Skipped v0.2 | Mechanical prose screen (no AI cost). Same reasoning as above. |
 
 ---
 
@@ -230,9 +230,9 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/structures | ⏭️ Skipped v0.2 | Lists story structure frameworks. Covered internally by `structure-check`; not needed as standalone MCP tool. |
-| POST | /api/structures/recommend | ⏭️ Skipped v0.2 | Recommend structure for a genre. Covered by `authorclaw_project_structure_check`. |
-| POST | /api/structures/check-outline | ⏭️ Skipped v0.2 | Check a raw outline array. Use `authorclaw_project_structure_check` instead (reads from project). |
+| GET | /api/structures | Skipped v0.2 | Lists story structure frameworks. Covered internally by `structure-check`; not needed as standalone MCP tool. |
+| POST | /api/structures/recommend | Skipped v0.2 | Recommend structure for a genre. Covered by `authorclaw_project_structure_check`. |
+| POST | /api/structures/check-outline | Skipped v0.2 | Check a raw outline array. Use `authorclaw_project_structure_check` instead (reads from project). |
 
 ---
 
@@ -240,7 +240,7 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| POST | /api/style-clone/analyze | ⏭️ Skipped v0.2 | Analyze arbitrary pasted text for style profile. The project-scoped `authorclaw_project_style_clone` covers the primary use case. Document standalone in v0.3. |
+| POST | /api/style-clone/analyze | Skipped v0.2 | Analyze arbitrary pasted text for style profile. The project-scoped `authorclaw_project_style_clone` covers the primary use case. Document standalone in v0.3. |
 
 ---
 
@@ -248,7 +248,7 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| GET | /api/beta-reader/archetypes | ⏭️ Skipped v0.2 | Lists available beta-reader archetypes. Not a workflow step; internal metadata. |
+| GET | /api/beta-reader/archetypes | Skipped v0.2 | Lists available beta-reader archetypes. Not a workflow step; internal metadata. |
 
 ---
 
@@ -256,14 +256,13 @@ in `authorclaw-mcp`. Generated from `/opt/docker-compose/authorclaw/src/gateway/
 
 | Method | Path | Disposition | Tool / Rationale |
 |---|---|---|---|
-| POST | /api/covers/apply-typography | ⏭️ Skipped v0.2 | Overlay title/author text on a cover PNG. Niche compositor step; v0.3. |
+| POST | /api/covers/apply-typography | Skipped v0.2 | Overlay title/author text on a cover PNG. Niche compositor step; v0.3. |
 
 ---
 
 ## Skipped Categories (v0.2)
 
-### Vault (4 endpoints) — 🔒 Security
-
+### Vault (4 endpoints) (Security-skipped)
 All `/api/vault/*` endpoints expose stored API keys (Anthropic, Gemini, DeepSeek, etc.). Wrapping these would let any MCP client read and modify credentials. Never expose via MCP.
 
 | Method | Path | Rationale |
@@ -273,15 +272,13 @@ All `/api/vault/*` endpoints expose stored API keys (Anthropic, Gemini, DeepSeek
 | DELETE | /api/vault/:key | Deletes a key |
 | POST | /api/vault/load-from-files | Loads keys from shared folder files |
 
-### Config (2 endpoints) — 🔒 Security
-
+### Config (2 endpoints) (Security-skipped)
 | Method | Path | Rationale |
 |---|---|---|
 | GET | /api/config | Returns internal config including cost limits, heartbeat intervals, security presets |
 | POST | /api/config/update | Modifies live server config (AI provider, cost limits, Telegram, etc.) |
 
-### Memory (5 endpoints) — ⏭️ Operator / Internal
-
+### Memory (5 endpoints) (Skipped: Operator / Internal)
 Memory management is internal plumbing. Exposing reset/reindex to MCP agents risks data loss.
 
 | Method | Path | Rationale |
@@ -293,8 +290,7 @@ Memory management is internal plumbing. Exposing reset/reindex to MCP agents ris
 | GET | /api/memory/active-persona | Gets active persona for memory tagging |
 | POST | /api/memory/active-persona | Sets active persona for memory tagging |
 
-### Agent / Autonomous (10 endpoints) — ⏭️ Operator
-
+### Agent / Autonomous (10 endpoints) (Skipped: Operator)
 Heartbeat / autonomous mode is a server-side scheduler. Not a writing workflow tool.
 
 | Method | Path | Rationale |
@@ -313,28 +309,24 @@ Heartbeat / autonomous mode is a server-side scheduler. Not a writing workflow t
 | DELETE | /api/autonomous/idle-tasks/:index | Delete idle task |
 | GET | /api/autonomous/idle-tasks/history/:filename | Download idle task history file |
 
-### Audit (1 endpoint) — 🔒 Security
-
+### Audit (1 endpoint) (Security-skipped)
 | Method | Path | Rationale |
 |---|---|---|
-| GET | /api/audit | Returns last 50 audit log entries — internal security log; MCP exposure risks metadata leakage |
+| GET | /api/audit | Returns last 50 audit log entries : internal security log; MCP exposure risks metadata leakage |
 
-### Activity (2 endpoints) — ⏭️ Operator
-
+### Activity (2 endpoints) (Skipped: Operator)
 | Method | Path | Rationale |
 |---|---|---|
 | GET | /api/activity | Activity feed |
-| GET | /api/activity/stream | SSE activity stream — server-sent events; not usable from MCP tool paradigm |
+| GET | /api/activity/stream | SSE activity stream : server-sent events; not usable from MCP tool paradigm |
 
-### Author OS (2 endpoints) — ⏭️ Operator
-
+### Author OS (2 endpoints) (Skipped: Operator)
 | Method | Path | Rationale |
 |---|---|---|
 | GET | /api/author-os/status | Lists external tool status |
-| POST | /api/author-os/format | Exports markdown to docx/html/txt — similar function to `authorclaw_files_export`; defer to v0.3 if distinct need arises |
+| POST | /api/author-os/format | Exports markdown to docx/html/txt : similar function to `authorclaw_files_export`; defer to v0.3 if distinct need arises |
 
-### Backup (4 endpoints) — ⏭️ Operator
-
+### Backup (4 endpoints) (Skipped: Operator)
 Dashboard concern. Snapshot/restore/list/delete are sysadmin operations.
 
 | Method | Path | Rationale |
@@ -344,21 +336,18 @@ Dashboard concern. Snapshot/restore/list/delete are sysadmin operations.
 | POST | /api/backup/restore/:id | Restore backup |
 | DELETE | /api/backup/:id | Delete backup |
 
-### Browser (1 endpoint) — ⏭️ Operator
-
+### Browser (1 endpoint) (Skipped: Operator)
 | Method | Path | Rationale |
 |---|---|---|
 | GET | /api/browser/doctor | Diagnostic: which browser-automation planners are active |
 
-### Workspace (2 endpoints) — ⏭️ Operator
-
+### Workspace (2 endpoints) (Skipped: Operator)
 | Method | Path | Rationale |
 |---|---|---|
 | GET | /api/workspace/stats | Workspace disk usage stats |
-| DELETE | /api/workspace/clean | Deletes workspace subdirectory — destructive, no safe use in MCP context |
+| DELETE | /api/workspace/clean | Deletes workspace subdirectory : destructive, no safe use in MCP context |
 
-### Orchestrator (7 endpoints) — ⏭️ Operator
-
+### Orchestrator (7 endpoints) (Skipped: Operator)
 Script process manager. No writing-workflow relevance.
 
 | Method | Path | Rationale |
@@ -372,8 +361,7 @@ Script process manager. No writing-workflow relevance.
 | GET | /api/orchestrator/scripts/:id/logs | Script logs |
 | DELETE | /api/orchestrator/scripts/:id | Delete script config |
 
-### Cron (5 endpoints) — ⏭️ Operator
-
+### Cron (5 endpoints) (Skipped: Operator)
 Scheduled job management. Not a writing-workflow tool.
 
 | Method | Path | Rationale |
@@ -385,8 +373,7 @@ Scheduled job management. Not a writing-workflow tool.
 | POST | /api/cron/:id/run-now | Run job immediately |
 | POST | /api/cron/validate | Validate cron expression |
 
-### Telegram (5 endpoints) — ⏭️ Operator
-
+### Telegram (5 endpoints) (Skipped: Operator)
 Telegram bridge management. Not a writing-workflow tool.
 
 | Method | Path | Rationale |
@@ -397,8 +384,7 @@ Telegram bridge management. Not a writing-workflow tool.
 | POST | /api/telegram/test | Test token |
 | POST | /api/telegram/users | Set allowed users |
 
-### Goals (5 endpoints) — ⏭️ Broader scope / v0.3
-
+### Goals (5 endpoints) (Skipped: Broader scope / v0.3)
 Writing goals are potentially useful but have a wide data model. Defer to v0.3.
 
 | Method | Path | Rationale |
@@ -409,8 +395,7 @@ Writing goals are potentially useful but have a wide data model. Defer to v0.3.
 | POST | /api/goals/:id/status | Set goal status |
 | DELETE | /api/goals/:id | Delete goal |
 
-### Calendar (6 endpoints) — ⏭️ Broader scope / v0.3
-
+### Calendar (6 endpoints) (Skipped: Broader scope / v0.3)
 Release calendar. Useful for launch management but distinct from core writing workflow.
 
 | Method | Path | Rationale |
@@ -422,8 +407,7 @@ Release calendar. Useful for launch management but distinct from core writing wo
 | DELETE | /api/calendar/:id | Delete event |
 | GET | /api/calendar/export.ics | Export ICS file |
 
-### Launches (7 endpoints) — ⏭️ Broader scope / v0.3
-
+### Launches (7 endpoints) (Skipped: Broader scope / v0.3)
 Book launch orchestration. Wave 3 feature with confirmation gates; complex UX for v0.2.
 
 | Method | Path | Rationale |
@@ -436,8 +420,7 @@ Book launch orchestration. Wave 3 feature with confirmation gates; complex UX fo
 | POST | /api/launches/:id/propose-step | Propose a launch step |
 | DELETE | /api/launches/:id | Delete launch |
 
-### Confirmations (5 endpoints) — ⏭️ Operator / Wave 3 gate
-
+### Confirmations (5 endpoints) (Skipped: Operator / Wave 3 gate)
 Confirmation gate for irreversible Wave 3 actions. Internal plumbing; not a writing tool.
 
 | Method | Path | Rationale |
@@ -448,8 +431,7 @@ Confirmation gate for irreversible Wave 3 actions. Internal plumbing; not a writ
 | POST | /api/confirmations/:id/reject | Reject |
 | POST | /api/confirmations/:id/outcome | Record external outcome |
 
-### Disclosures (2 endpoints) — ⏭️ Operator
-
+### Disclosures (2 endpoints) (Skipped: Operator)
 AI disclosure compliance. Internal; not a writing-workflow tool.
 
 | Method | Path | Rationale |
@@ -457,8 +439,7 @@ AI disclosure compliance. Internal; not a writing-workflow tool.
 | GET | /api/disclosures/universal | Get universal disclaimer text |
 | POST | /api/disclosures/check | Check platform compliance |
 
-### Sites / Websites (16 endpoints) — ⏭️ Broader scope / v0.3
-
+### Sites / Websites (16 endpoints) (Skipped: Broader scope / v0.3)
 Author website builder. Distinct product surface; not core writing workflow.
 
 | Method | Path | Rationale |
@@ -481,14 +462,12 @@ Author website builder. Distinct product surface; not core writing workflow.
 | POST | /api/sites/:siteId/publish | Render + deploy |
 | GET | /api/site-deploy/doctor | Deploy-target diagnostics |
 
-### Blog Posts (1 endpoint) — ⏭️ Broader scope / v0.3
-
+### Blog Posts (1 endpoint) (Skipped: Broader scope / v0.3)
 | Method | Path | Rationale |
 |---|---|---|
 | POST | /api/blog-posts/draft | AI-draft a blog post from a project |
 
-### AMS Ads (2 endpoints) — ⏭️ Broader scope / v0.3
-
+### AMS Ads (2 endpoints) (Skipped: Broader scope / v0.3)
 Amazon advertising. Wave 3 / launch workflow.
 
 | Method | Path | Rationale |
@@ -496,26 +475,22 @@ Amazon advertising. Wave 3 / launch workflow.
 | POST | /api/ams/propose-campaigns | Propose ad campaign structure |
 | POST | /api/ams/optimize | Optimize existing campaigns |
 
-### BookBub (1 endpoint) — ⏭️ Broader scope / v0.3
-
+### BookBub (1 endpoint) (Skipped: Broader scope / v0.3)
 | Method | Path | Rationale |
 |---|---|---|
 | POST | /api/bookbub/draft | Draft BookBub Featured Deal submission |
 
-### KDP (1 endpoint) — ⏭️ Broader scope / v0.3
-
+### KDP (1 endpoint) (Skipped: Broader scope / v0.3)
 | Method | Path | Rationale |
 |---|---|---|
 | POST | /api/kdp/export-blurb | Format KDP blurb HTML |
 
-### Providers (1 endpoint) — 🔒 Security / Operator
-
+### Providers (1 endpoint) (Security-skipped: Operator)
 | Method | Path | Rationale |
 |---|---|---|
-| POST | /api/providers/refresh | Re-initializes AI provider detection — touches vault; operator action |
+| POST | /api/providers/refresh | Re-initializes AI provider detection : touches vault; operator action |
 
-### Track Changes (2 endpoints) — ⏭️ Niche / v0.3
-
+### Track Changes (2 endpoints) (Skipped: Niche / v0.3)
 DOCX roundtrip editor. Useful but requires complex multipart file workflow.
 
 | Method | Path | Rationale |
@@ -523,8 +498,7 @@ DOCX roundtrip editor. Useful but requires complex multipart file workflow.
 | POST | /api/track-changes/parse | Upload and parse tracked-changes .docx |
 | POST | /api/track-changes/apply | Apply accept/reject decisions |
 
-### User Model (3 endpoints) — ⏭️ Internal / v0.3
-
+### User Model (3 endpoints) (Skipped: Internal / v0.3)
 Honcho-style author dialectic profile. Interesting but internal state management.
 
 | Method | Path | Rationale |
@@ -533,8 +507,7 @@ Honcho-style author dialectic profile. Interesting but internal state management
 | POST | /api/user-model/consolidate | Force consolidation via AI |
 | DELETE | /api/user-model | Reset user model |
 
-### Preferences (4 endpoints) — ⏭️ Internal / v0.3
-
+### Preferences (4 endpoints) (Skipped: Internal / v0.3)
 Per-author preference store.
 
 | Method | Path | Rationale |
@@ -544,8 +517,7 @@ Per-author preference store.
 | DELETE | /api/preferences/:key | Delete a preference |
 | DELETE | /api/preferences | Reset all preferences |
 
-### Lessons (4 endpoints) — ⏭️ Internal / v0.3
-
+### Lessons (4 endpoints) (Skipped: Internal / v0.3)
 Agent lessons store (from Sneakers pattern).
 
 | Method | Path | Rationale |
@@ -555,8 +527,7 @@ Agent lessons store (from Sneakers pattern).
 | POST | /api/lessons/:id/adjust | Adjust lesson confidence |
 | DELETE | /api/lessons | Reset all lessons |
 
-### Skill Drafts (4 endpoints) — ⏭️ Operator
-
+### Skill Drafts (4 endpoints) (Skipped: Operator)
 Auto-generated SKILL.md review queue. Developer/operator tooling.
 
 | Method | Path | Rationale |
@@ -566,8 +537,7 @@ Auto-generated SKILL.md review queue. Developer/operator tooling.
 | POST | /api/skill-drafts/:id/accept | Accept draft |
 | POST | /api/skill-drafts/:id/reject | Reject draft |
 
-### Tools Ingestion (2 endpoints) — ⏭️ Operator
-
+### Tools Ingestion (2 endpoints) (Skipped: Operator)
 Generate SKILL.md from source code. Developer tooling.
 
 | Method | Path | Rationale |
@@ -575,8 +545,7 @@ Generate SKILL.md from source code. Developer tooling.
 | POST | /api/tools/ingest | AI-analyze code and generate SKILL.md |
 | POST | /api/tools/ingest/save | Save generated SKILL.md |
 
-### Translation (3 endpoints) — ⏭️ Broader scope / v0.3
-
+### Translation (3 endpoints) (Skipped: Broader scope / v0.3)
 Foreign rights pipeline. Distinct product surface.
 
 | Method | Path | Rationale |
@@ -585,8 +554,7 @@ Foreign rights pipeline. Distinct product surface.
 | POST | /api/translation/propose | Propose a single-language translation |
 | POST | /api/translation/rights-pitch | Generate a rights-pitch letter |
 
-### Video (2 endpoints) — ⏭️ Broader scope / v0.3
-
+### Video (2 endpoints) (Skipped: Broader scope / v0.3)
 YouTube research tool.
 
 | Method | Path | Rationale |
@@ -594,8 +562,7 @@ YouTube research tool.
 | GET | /api/video/doctor | Check yt-dlp availability |
 | POST | /api/video/extract | Extract transcript + AI notes from a video URL |
 
-### Reader Intel (1 endpoint) — ⏭️ Broader scope / v0.3
-
+### Reader Intel (1 endpoint) (Skipped: Broader scope / v0.3)
 Review analysis.
 
 | Method | Path | Rationale |

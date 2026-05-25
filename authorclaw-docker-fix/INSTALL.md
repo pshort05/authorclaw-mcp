@@ -1,4 +1,4 @@
-# Installation — authorclaw-docker-fix
+# Installation: authorclaw-docker-fix
 
 Quick-start to apply the LAN patch to a local AuthorClaw checkout.
 
@@ -8,12 +8,12 @@ Quick-start to apply the LAN patch to a local AuthorClaw checkout.
 - `bash` and `python3` on the host that runs the script. (The docker-compose stack's `authorclaw-patcher` init container installs `python3` automatically on the Alpine base image.)
 - Optional: `sudo` and `docker compose` if you use `--rebuild`.
 
-## Path A — manual (run the script directly)
+## Path A: manual (run the script directly)
 
 From this repo's root:
 
 ```bash
-# Apply the patch in place. Idempotent — safe to re-run after a git pull
+# Apply the patch in place. Idempotent; safe to re-run after a git pull
 # on the AuthorClaw checkout.
 ./authorclaw-docker-fix/apply-lan-patch.sh
 
@@ -36,9 +36,9 @@ or use the one-liner that does patch + rebuild + recreate:
 ./authorclaw-docker-fix/apply-lan-patch.sh --rebuild
 ```
 
-## Path B — via the docker-compose stack in this repo
+## Path B: via the docker-compose stack in this repo
 
-If you're using the `docker-compose.yml` at the parent directory, the patcher runs automatically as an init container before AuthorClaw starts. No manual step required — the compose file already bind-mounts this directory's script and runs it once per stack-up.
+If you're using the `docker-compose.yml` at the parent directory, the patcher runs automatically as an init container before AuthorClaw starts. No manual step required: the compose file already bind-mounts this directory's script and runs it once per stack-up.
 
 ```bash
 # From the repo root:
@@ -46,7 +46,7 @@ docker compose run --rm authorclaw-patcher   # one-shot apply
 docker compose up -d                          # bring up the full stack
 ```
 
-The patcher exits successfully on the second invocation too — the idempotency check means re-running is harmless.
+The patcher exits successfully on the second invocation too; the idempotency check means re-running is harmless.
 
 ## Verifying it worked
 

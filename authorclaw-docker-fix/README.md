@@ -10,7 +10,7 @@ Apply this patch if AuthorClaw is not reachable from the host that runs `authorc
 
 - AuthorClaw is running in a Docker container on the same host and you've published its port 3847 but the MCP bridge gets `ERR_EMPTY_RESPONSE` / `ECONNREFUSED`.
 - AuthorClaw runs on a different physical machine on your LAN and you want the bridge to reach it.
-- You're running the docker-compose stack from this repo — the `authorclaw-patcher` init container runs this script automatically.
+- You're running the docker-compose stack from this repo: the `authorclaw-patcher` init container runs this script automatically.
 
 If you run AuthorClaw and `authorclaw-mcp` on the same machine, talking to it over `127.0.0.1`, you don't need the patch.
 
@@ -18,7 +18,7 @@ If you run AuthorClaw and `authorclaw-mcp` on the same machine, talking to it ov
 
 AuthorClaw's [README](https://github.com/Ckokoski/authorclaw/blob/main/README.md) recommends running the application in a VM or VPS with Docker:
 
-> We strongly recommend running AuthorClaw inside a VM or VPS with Docker. Your API keys, manuscripts, and creative work deserve real protection. Defense in depth means multiple security layers — not just application-level security.
+> We strongly recommend running AuthorClaw inside a VM or VPS with Docker. Your API keys, manuscripts, and creative work deserve real protection. Defense in depth means multiple security layers, not just application-level security.
 
 However, the source code in `gateway/src/index.ts` hardcodes the listener to loopback:
 
@@ -104,7 +104,7 @@ or rely on the script's default (`0.0.0.0`) which is applied when the environmen
 - Read and write the workspace, vault, and project state
 - Trigger external actions that the confirmation gate may not correctly validate for non-local requesters
 
-This is acceptable on a trusted single-user home LAN. It is not acceptable for any wider exposure. If the service is reachable from untrusted networks, front it with a reverse proxy that enforces authentication — for example, the `authorclaw-mcp` bridge in the parent directory exposes its OAuth-protected port 3000 and keeps AuthorClaw's port 3847 unpublished inside the Docker network, which is the recommended deployment.
+This is acceptable on a trusted single-user home LAN. It is not acceptable for any wider exposure. If the service is reachable from untrusted networks, front it with a reverse proxy that enforces authentication. For example, the `authorclaw-mcp` bridge in the parent directory exposes its OAuth-protected port 3000 and keeps AuthorClaw's port 3847 unpublished inside the Docker network, which is the recommended deployment.
 
 ## Suggested upstream fix
 
@@ -121,4 +121,4 @@ If the AuthorClaw maintainer accepts that direction, this directory becomes obso
 
 ## License
 
-MIT — see [`../LICENSE`](../LICENSE). Identical to the parent project.
+MIT. See [`../LICENSE`](../LICENSE). Identical to the parent project.
