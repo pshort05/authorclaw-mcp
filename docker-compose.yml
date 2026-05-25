@@ -1,29 +1,67 @@
 services:
-  mcp-bridge:
-    image: ghcr.io/freema/openclaw-mcp:latest
-    container_name: openclaw-mcp
-    restart: unless-stopped
-    ports:
-      - "${PORT:-3000}:3000"
+
+  # Step 1: Apply the LAN patch to AuthorClaw source before building the gateway.
+  # Mutates the files in AUTHORCLAW_SRC on the host so the subsequent build picks
+  # up the patched source.  Runs once and exits.
+  authorclaw-patcher:
+    image: alpine:3.19
+    volumes:
+      - ${AUTHORCLAW_SRC:-/opt/docker-compose/authorclaw/src}:/src
+      - ./scripts/apply-lan-patch.sh:/apply-lan-patch.sh:ro
     environment:
-      - OPENCLAW_URL=${OPENCLAW_URL:-http://host.docker.internal:18789}
-      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN:-}
-      - OPENCLAW_MODEL=${OPENCLAW_MODEL:-openclaw}
-      - DEBUG=${DEBUG:-false}
-      - AUTH_ENABLED=${AUTH_ENABLED:-true}
-      - MCP_CLIENT_ID=${MCP_CLIENT_ID:-openclaw}
-      - MCP_CLIENT_SECRET=${MCP_CLIENT_SECRET:-}
+      - REPO=/src
+    # apply-lan-patch.sh uses python3 for safe literal-string replacement;
+    # install it before running the patch script.
+    command: sh -c 'apk add --no-cache python3 && sh /apply-lan-patch.sh'
+    # Runs once and exits; authorclaw waits for it via depends_on
+    # (condition: service_completed_successfully).
+
+  # Step 2: AuthorClaw gateway (patched).
+  authorclaw:
+    build:
+      context: ${AUTHORCLAW_SRC:-/opt/docker-compose/authorclaw/src}
+      dockerfile: docker/Dockerfile
+    container_name: authorclaw
+    restart: unless-stopped
+    depends_on:
+      authorclaw-patcher:
+        condition: service_completed_successfully
+    environment:
+      - AUTHORCLAW_BIND=0.0.0.0
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - authorclaw-workspace:/app/workspace
+    # NOTE: port 3847 is NOT published to the host.
+    # Only authorclaw-mcp can reach it, via the internal Docker network.
+    networks:
+      - authorclaw-internal
+
+  # Step 3: MCP bridge (this repo).
+  authorclaw-mcp:
+    image: ghcr.io/pshort05/authorclaw-mcp:latest
+    container_name: authorclaw-mcp
+    restart: unless-stopped
+    depends_on:
+      - authorclaw
+    ports:
+      - "3000:3000"
+    environment:
+      - AUTHORCLAW_URL=http://authorclaw:3847
+      - AUTH_ENABLED=true
+      - MCP_CLIENT_ID=authorclaw
+      - MCP_CLIENT_SECRET=${MCP_CLIENT_SECRET}
       - MCP_ISSUER_URL=${MCP_ISSUER_URL:-}
-      - CORS_ORIGINS=${CORS_ORIGINS:-https://claude.ai}
-      - NODE_ENV=production
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - CORS_ORIGINS=https://claude.ai
     read_only: true
-    tmpfs:
-      - /tmp
-    deploy:
-      resources:
-        limits:
-          memory: 256M
     security_opt:
-      - no-new-privileges
+      - no-new-privileges:true
+    networks:
+      - authorclaw-internal
+
+volumes:
+  authorclaw-workspace:
+
+networks:
+  authorclaw-internal:
+    driver: bridge
