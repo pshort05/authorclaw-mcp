@@ -28,12 +28,12 @@ FROM node:20-slim AS runtime
 ARG VERSION=dev
 
 # OCI image labels
-LABEL org.opencontainers.image.title="openclaw-mcp" \
-      org.opencontainers.image.description="Model Context Protocol server for OpenClaw AI assistant integration" \
+LABEL org.opencontainers.image.title="authorclaw-mcp" \
+      org.opencontainers.image.description="Model Context Protocol server for AuthorClaw AI assistant integration" \
       org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.source="https://github.com/freema/openclaw-mcp" \
+      org.opencontainers.image.source="https://github.com/freema/authorclaw-mcp" \
       org.opencontainers.image.licenses="MIT" \
-      io.modelcontextprotocol.server.name="io.github.freema/openclaw-mcp"
+      io.modelcontextprotocol.server.name="io.github.freema/authorclaw-mcp"
 
 # Copy tini binary from builder
 COPY --from=builder /usr/bin/tini /usr/bin/tini
@@ -47,7 +47,7 @@ COPY --from=builder /app/package.json package.json
 
 # Environment defaults
 ENV NODE_ENV=production
-ENV OPENCLAW_URL=http://openclaw:18789
+ENV AUTHORCLAW_URL=http://authorclaw:18789
 
 # Run as non-root user
 RUN chown -R node:node /app
