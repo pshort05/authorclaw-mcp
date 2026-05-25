@@ -40,7 +40,7 @@ export function parseArguments(version: string): CliArgs {
     .option('timeout', {
       type: 'number',
       description: 'Request timeout in milliseconds',
-      default: parseInt(process.env.AUTHORCLAW_TIMEOUT_MS || process.env.OPENCLAW_TIMEOUT_MS || '120000', 10),
+      default: parseInt(process.env.AUTHORCLAW_TIMEOUT_MS || '120000', 10),
     })
     .option('debug', {
       type: 'boolean',

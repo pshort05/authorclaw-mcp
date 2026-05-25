@@ -28,12 +28,12 @@ import {
   dispatchResearchAdvancedTool,
 } from '../tools/research-advanced.js';
 import {
-  openclawTaskStatusTool,
-  openclawTaskListTool,
-  openclawTaskCancelTool,
-  handleOpenclawTaskStatus,
-  handleOpenclawTaskList,
-  handleOpenclawTaskCancel,
+  taskStatusTool,
+  taskListTool,
+  taskCancelTool,
+  handleTaskStatus,
+  handleTaskList,
+  handleTaskCancel,
 } from '../mcp/tools/tasks.js';
 
 export interface ToolRegistrationDeps {
@@ -83,9 +83,9 @@ function registerTools(server: Server, _deps: ToolRegistrationDeps): void {
     ...projectWritingTools,
     ...personaTools,
     ...researchAdvancedTools,
-    openclawTaskStatusTool,
-    openclawTaskListTool,
-    openclawTaskCancelTool,
+    taskStatusTool,
+    taskListTool,
+    taskCancelTool,
   ];
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -144,13 +144,13 @@ function registerTools(server: Server, _deps: ToolRegistrationDeps): void {
         return await dispatchSeriesTool(name, args, authorClawClient);
       }
       if (name === 'authorclaw_task_status') {
-        return await handleOpenclawTaskStatus(toolArgs);
+        return await handleTaskStatus(toolArgs);
       }
       if (name === 'authorclaw_task_list') {
-        return await handleOpenclawTaskList(toolArgs);
+        return await handleTaskList(toolArgs);
       }
       if (name === 'authorclaw_task_cancel') {
-        return await handleOpenclawTaskCancel(toolArgs);
+        return await handleTaskCancel(toolArgs);
       }
       throw new Error(`Unknown tool: ${name}`);
     } catch (error) {

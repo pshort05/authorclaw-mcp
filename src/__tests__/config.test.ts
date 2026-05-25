@@ -48,7 +48,7 @@ describe('config.authorclaw', () => {
   });
 });
 
-describe('config.openclaw and config.server (re-exported from constants)', () => {
+describe('config.server (re-exported from constants)', () => {
   beforeEach(() => {
     vi.resetModules();
   });
@@ -60,18 +60,6 @@ describe('config.openclaw and config.server (re-exported from constants)', () =>
   async function loadConfig() {
     return await import('../config.js');
   }
-
-  it('exposes the OpenClaw URL constant', async () => {
-    const { config } = await loadConfig();
-    expect(typeof config.openclaw.url).toBe('string');
-    expect(config.openclaw.url.length).toBeGreaterThan(0);
-  });
-
-  it('exposes the OpenClaw model default', async () => {
-    const { config } = await loadConfig();
-    expect(typeof config.openclaw.model).toBe('string');
-    expect(config.openclaw.model).toBe('openclaw');
-  });
 
   it('exposes server name and version', async () => {
     const { config } = await loadConfig();

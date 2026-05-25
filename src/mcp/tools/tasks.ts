@@ -13,7 +13,7 @@ import { validateInputIsObject, validateId } from '../../utils/validation.js';
 // Tool Definitions
 // ============================================================================
 
-export const openclawTaskStatusTool: Tool = {
+export const taskStatusTool: Tool = {
   name: 'authorclaw_task_status',
   description: 'Check the status of an async task. Returns status, and result if completed.',
   inputSchema: {
@@ -28,7 +28,7 @@ export const openclawTaskStatusTool: Tool = {
   },
 };
 
-export const openclawTaskListTool: Tool = {
+export const taskListTool: Tool = {
   name: 'authorclaw_task_list',
   description: 'List all tasks. Optionally filter by status, session, or instance.',
   inputSchema: {
@@ -52,7 +52,7 @@ export const openclawTaskListTool: Tool = {
   },
 };
 
-export const openclawTaskCancelTool: Tool = {
+export const taskCancelTool: Tool = {
   name: 'authorclaw_task_cancel',
   description: "Cancel a pending task. Only works for tasks that haven't started yet.",
   inputSchema: {
@@ -71,7 +71,7 @@ export const openclawTaskCancelTool: Tool = {
 // Tool Handlers
 // ============================================================================
 
-export async function handleOpenclawTaskStatus(input: unknown): Promise<ToolResponse> {
+export async function handleTaskStatus(input: unknown): Promise<ToolResponse> {
   if (!validateInputIsObject(input)) {
     return errorResponse('Invalid input: expected an object');
   }
@@ -119,7 +119,7 @@ const VALID_TASK_STATUSES: readonly TaskStatus[] = [
   'cancelled',
 ];
 
-export async function handleOpenclawTaskList(input: unknown): Promise<ToolResponse> {
+export async function handleTaskList(input: unknown): Promise<ToolResponse> {
   if (!validateInputIsObject(input)) {
     return errorResponse('Invalid input: expected an object');
   }
@@ -178,7 +178,7 @@ export async function handleOpenclawTaskList(input: unknown): Promise<ToolRespon
   );
 }
 
-export async function handleOpenclawTaskCancel(input: unknown): Promise<ToolResponse> {
+export async function handleTaskCancel(input: unknown): Promise<ToolResponse> {
   if (!validateInputIsObject(input)) {
     return errorResponse('Invalid input: expected an object');
   }
