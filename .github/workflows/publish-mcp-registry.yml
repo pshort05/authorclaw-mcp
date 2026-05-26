@@ -3,7 +3,6 @@ name: Publish to MCP Registry
 on:
   release:
     types: [published]
-  workflow_dispatch:
 
 jobs:
   publish:
@@ -41,9 +40,9 @@ jobs:
       - name: Wait for npm package to be available
         run: |
           VERSION=$(node -p "require('./server.json').version")
-          echo "Waiting for openclaw-mcp@$VERSION on npm..."
+          echo "Waiting for authorclaw-mcp@$VERSION on npm..."
           for i in $(seq 1 60); do
-            if npm view "openclaw-mcp@$VERSION" version 2>/dev/null | grep -q "^$VERSION$"; then
+            if npm view "authorclaw-mcp@$VERSION" version 2>/dev/null | grep -q "^$VERSION$"; then
               echo "Package available."
               exit 0
             fi
@@ -56,13 +55,13 @@ jobs:
       - name: Wait for OCI image to be available
         run: |
           VERSION=$(node -p "require('./server.json').version")
-          echo "Waiting for ghcr.io/freema/openclaw-mcp:$VERSION..."
-          TOKEN=$(curl -s "https://ghcr.io/token?scope=repository:freema/openclaw-mcp:pull" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).token))")
+          echo "Waiting for ghcr.io/pshort05/authorclaw-mcp:$VERSION..."
+          TOKEN=$(curl -s "https://ghcr.io/token?scope=repository:pshort05/authorclaw-mcp:pull" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).token))")
           for i in $(seq 1 60); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" \
               -H "Authorization: Bearer $TOKEN" \
               -H "Accept: application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.list.v2+json,application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.v2+json" \
-              "https://ghcr.io/v2/freema/openclaw-mcp/manifests/$VERSION")
+              "https://ghcr.io/v2/pshort05/authorclaw-mcp/manifests/$VERSION")
             if [ "$CODE" = "200" ]; then
               echo "Image available."
               exit 0
@@ -73,10 +72,20 @@ jobs:
           echo "Timed out waiting for OCI image."
           exit 1
 
-      - name: Install mcp-publisher
+      - name: Install mcp-publisher (pinned + checksummed)
+        env:
+          MCP_PUBLISHER_VERSION: 'v1.3.7'
+          MCP_PUBLISHER_SHA256: '6b8537fb88b1ea11df9b34f9fc6e1d8bedf65f5f9e2cf906b8a85ba3b1c44eba'
         run: |
-          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
-            | tar xz mcp-publisher
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/mcp-publisher_${MCP_PUBLISHER_VERSION#v}_linux_amd64.tar.gz" \
+            -o mcp-publisher.tar.gz
+          actual=$(sha256sum mcp-publisher.tar.gz | awk '{print $1}')
+          if [ "$actual" != "$MCP_PUBLISHER_SHA256" ]; then
+            echo "checksum mismatch: got $actual, expected $MCP_PUBLISHER_SHA256"
+            echo "If the upstream binary has legitimately changed, update MCP_PUBLISHER_VERSION + MCP_PUBLISHER_SHA256 above."
+            exit 1
+          fi
+          tar xzf mcp-publisher.tar.gz mcp-publisher
           chmod +x mcp-publisher
 
       - name: Login to MCP Registry (GitHub OIDC)

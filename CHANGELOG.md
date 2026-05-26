@@ -2,6 +2,35 @@
 
 Notable changes per release. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.7] 2026-05-25
+
+Security release addressing all 11 High-severity findings from the NIST SP 800-53 Rev. 5 review.
+
+### Security
+
+- **H1 / H2 (SR-3, SR-6):** Resolved 7 dependency advisories via `npm audit fix`. `@modelcontextprotocol/sdk` bumped from 1.25.3 to 1.29.0 (closes GHSA-345p-7cg4-v4c7 cross-client data leak). Transitive `hono` chain updated past 5 High advisories including SSE Control Field Injection (GHSA-p6xx-57qc-3wxr). Production audit now reports zero vulnerabilities.
+- **H3 (SR-10):** Fixed the release pipeline to publish to the correct namespace. `release.yml` and `publish-mcp-registry.yml` now reference `ghcr.io/pshort05/authorclaw-mcp` (was `ghcr.io/freema/openclaw-mcp` left over from the fork source). Archive name updated to `authorclaw-mcp-<version>.tar.gz`. Tag pattern changed from `[0-9]*` to `v[0-9]*` to match the actual release tags.
+- **H4 (SR-4):** Pinned `docker-compose.yml`'s MCP bridge image to `ghcr.io/pshort05/authorclaw-mcp:0.2.7` instead of the mutable `:latest` tag.
+- **H5 (SR-4, CM-2):** Pinned both `node:20-slim` references in the Dockerfile and the `alpine:3.19` reference in compose to SHA-256 content digests. Procedure for digest rotation documented in the Dockerfile.
+- **H6 (SR-9):** Regenerated `package-lock.json` under the correct package name. The lock file previously declared `openclaw-mcp@1.4.2` (stale upstream identity).
+- **H7 (SC-8, AC-17):** Startup guard: when `AUTH_ENABLED=true` and the bind is not loopback, the server now refuses to start unless `MCP_ISSUER_URL` is set to an `https://` URL. Prevents the OAuth Authorization Server Metadata document from advertising a plaintext `http://` issuer.
+- **H8 (IA-2, AC-3):** Added a PKCE-rejection integration test (`auth-integration.test.ts > rejects token exchange with a wrong code_verifier`) that pins the MCP SDK's S256 enforcement at the HTTP boundary. Documented the SDK-vs-provider PKCE responsibility split in `src/auth/provider.ts`.
+- **H9 (IA-2, IA-7):** Multi-replica startup guard: the server now refuses to start when `NODE_APP_INSTANCE` is set to a non-zero value (PM2 cluster mode or equivalent), because the in-memory token store is not shared across replicas. Set `MCP_ALLOW_REPLICATION=true` to override (sessions will be unstable until external token storage is added).
+- **H10 (SI-10, AU-12):** Extended the log sanitizer with patterns for bare provider keys: `sk-*` (OpenAI/Anthropic/OpenRouter/Perplexity), `xai-*`, `AIza*` (Google), `ghp_*` `gho_*` `ghs_*` `ghr_*` (GitHub), `glpat-*` (GitLab), `AKIA*` (AWS). Previously, a user pasting an API key into a chat message would have it logged verbatim.
+- **H11 (SI-11):** The top-level tool-call error handler in `src/server/tools-registration.ts` now catches generic exceptions, logs them server-side, and rethrows a generic `McpError(InternalError, "Tool execution failed")` instead of the raw `error.message`. Pre-defined `McpError` instances are forwarded unchanged. Stops backend status codes, internal paths, and future stack-trace fragments from leaking to MCP clients.
+
+### Changed
+
+- **OAuth redirect URI handling rewritten.** Removed the `ALLOW_ANY_REDIRECT` Proxy (M10), which depended on the MCP SDK's pre-1.29 `.includes()` check. The SDK now enforces RFC 8252 §7.3 strict matching, which Proxy tricks cannot satisfy. The pre-configured client's default `redirect_uris` is now an explicit list covering common local-dev callbacks and `https://claude.ai/oauth/callback`. Operators should set `MCP_REDIRECT_URIS` explicitly for production deployments.
+- **`MCP_CLIENT_SECRET` minimum length raised from 32 to 64 characters (M4)** to match the documented `openssl rand -hex 32` generation method (64 hex chars = 256 bits). Existing 32-character secrets generated with the previous guidance need to be regenerated.
+- **`Dockerfile`** sets `ENV AUTH_ENABLED=true` (CM-6) so running the container outside Compose without an explicit env override produces a secure-by-default configuration rather than silently disabling auth.
+- **CI hardening (M1, M2):** `release.yml` and `publish.yml` now include a `npm audit --omit=dev --audit-level=high` blocking step. `publish.yml` removed the `workflow_dispatch` trigger so npm publishes can only originate from a tag-driven release. `publish-mcp-registry.yml` removed `workflow_dispatch` and pins the `mcp-publisher` binary to a specific version + SHA-256 checksum (was previously fetched from `releases/latest` and executed without verification).
+- **`auth-integration.test.ts`** sets `keepAliveTimeout=1` and calls `server.closeAllConnections()` in teardown, fixing a local-environment hang caused by Node's fetch holding idle connections open past the test file's timeout.
+
+### Tests
+
+- 336 pass (was 333; +3 net after adding two redirect-URI default-list tests, the PKCE negative test, and removing two redundant unit tests covered by the integration negative test).
+
 ## [0.2.6] 2026-05-25
 
 ### Added
@@ -149,6 +178,7 @@ Initial public release.
 - Complete rebrand from `openclaw-mcp` to `authorclaw-mcp`: package metadata, server identity, configuration variables, MCP registry manifest, security policy, Docker image labels.
 - `docs/ARCHITECTURE.md`, `docs/installation.md`, `docs/configuration.md`, `docs/threat-model.md`.
 
+[0.2.7]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.7
 [0.2.6]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.6
 [0.2.5]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.5
 [0.2.4]: https://github.com/pshort05/authorclaw-mcp/releases/tag/v0.2.4

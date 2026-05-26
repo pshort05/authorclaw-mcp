@@ -7,7 +7,12 @@
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ErrorCode,
+  McpError,
+} from '@modelcontextprotocol/sdk/types.js';
 
 import { SERVER_ICON_SVG_BASE64 } from '../config/constants.js';
 import { log, logError } from '../utils/logger.js';
@@ -153,10 +158,18 @@ function registerTools(server: Server, deps: ToolRegistrationDeps): void {
       if (name === 'authorclaw_task_cancel') {
         return await handleTaskCancel(args);
       }
-      throw new Error(`Unknown tool: ${name}`);
+      throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
     } catch (error) {
+      // Log the full error server-side, but mask the message returned to the
+      // MCP client (SI-11). Internal status codes, stack traces, and upstream
+      // error strings are forensic data; they should not leak to whoever holds
+      // a valid OAuth token. Preserve well-defined McpError messages (these
+      // already carry user-meaningful information).
       logError(`Error executing tool ${name}`, error);
-      throw error;
+      if (error instanceof McpError) {
+        throw error;
+      }
+      throw new McpError(ErrorCode.InternalError, `Tool execution failed: ${name}`);
     }
   });
 }

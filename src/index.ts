@@ -20,6 +20,26 @@ const deps: ToolRegistrationDeps = {
 };
 
 async function main() {
+  // Multi-replica guard (IA-2, IA-7). Token state lives in-process and is not
+  // shared across replicas, so a token issued by one replica fails verification
+  // on another. Refuse to start in cluster mode unless the operator explicitly
+  // opts in (and accepts that authenticated sessions break on load-balanced
+  // requests until external token storage is added).
+  const replicaIndex = process.env.NODE_APP_INSTANCE;
+  if (
+    replicaIndex !== undefined &&
+    replicaIndex !== '0' &&
+    process.env.MCP_ALLOW_REPLICATION !== 'true'
+  ) {
+    logError(
+      `NODE_APP_INSTANCE=${replicaIndex} indicates a replicated deployment, ` +
+        'but in-memory token storage is not shared across replicas. Tokens ' +
+        'issued by one replica will be rejected by another. Refusing to start. ' +
+        'Set MCP_ALLOW_REPLICATION=true to override (sessions will be unstable).'
+    );
+    process.exit(1);
+  }
+
   log(`Starting ${SERVER_NAME} v${SERVER_VERSION}`);
   log(`Transport: ${args.transport}`);
   log(`Request timeout: ${args.timeout}ms`);
@@ -46,11 +66,40 @@ async function main() {
         process.exit(1);
       }
 
-      if (!args.clientSecret || args.clientSecret.length < 32) {
+      // 64 chars matches the documented `openssl rand -hex 32` output (256 bits
+      // of entropy). The previous 32-char minimum admitted weak inputs such as
+      // a 32-char memorable phrase (SC-12, IA-5).
+      if (!args.clientSecret || args.clientSecret.length < 64) {
         logError(
-          'MCP_CLIENT_SECRET must be at least 32 characters. Generate one with: openssl rand -hex 32'
+          'MCP_CLIENT_SECRET must be at least 64 characters (hex of 32 random bytes). ' +
+            'Generate one with: openssl rand -hex 32'
         );
         process.exit(1);
+      }
+
+      // Issuer URL guard (SC-8, AC-17). If auth is on and the bind is not
+      // loopback, the OAuth metadata document must advertise an HTTPS issuer.
+      // Otherwise clients that follow the advertised URL submit credentials
+      // over plaintext HTTP.
+      const isLoopbackBind =
+        args.host === '127.0.0.1' || args.host === 'localhost' || args.host === '::1';
+      if (!isLoopbackBind) {
+        if (!args.issuerUrl) {
+          logError(
+            `AUTH_ENABLED=true on HOST="${args.host}" but MCP_ISSUER_URL is not set. ` +
+              'The OAuth metadata document would advertise a plaintext http:// issuer. ' +
+              'Set MCP_ISSUER_URL to the public HTTPS URL of this server (e.g. https://mcp.example.com). ' +
+              'Refusing to start.'
+          );
+          process.exit(1);
+        }
+        if (!args.issuerUrl.startsWith('https://')) {
+          logError(
+            `MCP_ISSUER_URL="${args.issuerUrl}" must use https:// when the server is not bound to loopback. ` +
+              'Refusing to start.'
+          );
+          process.exit(1);
+        }
       }
 
       sseConfig.authConfig = {

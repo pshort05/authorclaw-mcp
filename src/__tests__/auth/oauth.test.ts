@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest';
+import { createHash } from 'node:crypto';
 import { AuthorClawAuthProvider, AuthorClawClientsStore } from '../../auth/provider.js';
+
+// Helper: generate a PKCE verifier + S256 challenge pair for tests that
+// exchange an authorization code. The provider verifies S256 in
+// exchangeAuthorizationCode as a defense-in-depth check (does not rely on the
+// SDK to enforce PKCE alone).
+function makePkce(verifier = 'test-verifier-abc123-must-be-43-plus-chars-long-x') {
+  const challenge = createHash('sha256').update(verifier).digest('base64url');
+  return { verifier, challenge };
+}
 
 describe('AuthorClawClientsStore', () => {
   it('returns pre-configured client by ID', async () => {
@@ -94,11 +104,26 @@ describe('AuthorClawClientsStore', () => {
     expect(client).toBeUndefined();
   });
 
-  it('accepts any redirect_uri for pre-configured client', async () => {
+  it('applies default redirect_uri list when none is configured', async () => {
+    // v0.2.7+: the ALLOW_ANY_REDIRECT proxy was removed because the MCP SDK
+    // 1.29+ enforces RFC 8252 strict matching that the proxy could not satisfy.
+    // The default list covers common local-dev clients and the Claude.ai
+    // callback; production deployments should set MCP_REDIRECT_URIS explicitly.
     const store = new AuthorClawClientsStore({ clientId: 'test-id', clientSecret: 'test-secret' });
     const client = await store.getClient('test-id');
-    expect(client?.redirect_uris.includes('http://any-uri.com/callback')).toBe(true);
-    expect(client?.redirect_uris.includes('https://claude.ai/oauth/callback')).toBe(true);
+    expect(client?.redirect_uris).toContain('http://localhost/callback');
+    expect(client?.redirect_uris).toContain('http://127.0.0.1/callback');
+    expect(client?.redirect_uris).toContain('https://claude.ai/oauth/callback');
+  });
+
+  it('honours configured redirect_uris over the defaults', async () => {
+    const store = new AuthorClawClientsStore({
+      clientId: 'test-id',
+      clientSecret: 'test-secret',
+      redirectUris: ['https://my-app.example.com/cb'],
+    });
+    const client = await store.getClient('test-id');
+    expect(client?.redirect_uris).toEqual(['https://my-app.example.com/cb']);
   });
 });
 
@@ -124,12 +149,13 @@ describe('AuthorClawAuthProvider', () => {
       cookie: () => {},
     };
 
+    const { verifier, challenge: realChallenge } = makePkce();
     await provider.authorize(
       client,
       {
         state: 'my-state',
         scopes: ['mcp:tools'],
-        codeChallenge: 'test-challenge',
+        codeChallenge: realChallenge,
         redirectUri: 'http://localhost/callback',
       },
       mockRes as any
@@ -145,10 +171,10 @@ describe('AuthorClawAuthProvider', () => {
 
     // Challenge
     const challenge = await provider.challengeForAuthorizationCode(client, code);
-    expect(challenge).toBe('test-challenge');
+    expect(challenge).toBe(realChallenge);
 
     // Exchange
-    const tokens = await provider.exchangeAuthorizationCode(client, code);
+    const tokens = await provider.exchangeAuthorizationCode(client, code, verifier);
     expect(tokens.access_token).toBeTruthy();
     expect(tokens.refresh_token).toBeTruthy();
     expect(tokens.token_type).toBe('bearer');
@@ -181,10 +207,11 @@ describe('AuthorClawAuthProvider', () => {
         redirectUrl = url;
       },
     };
+    const { verifier, challenge } = makePkce();
     await provider.authorize(
       client,
       {
-        codeChallenge: 'ch',
+        codeChallenge: challenge,
         redirectUri: 'http://localhost/cb',
       },
       mockRes as any
@@ -193,12 +220,20 @@ describe('AuthorClawAuthProvider', () => {
     const url = new URL(redirectUrl);
     const code = url.searchParams.get('code')!;
 
-    // Try to exchange with a different client
+    // Try to exchange with a different client. Client-mismatch must fire
+    // BEFORE PKCE verification, so the rejection reason is the client check
+    // regardless of whether we supply the correct verifier.
     const otherClient = { ...client, client_id: 'other' };
-    await expect(provider.exchangeAuthorizationCode(otherClient, code)).rejects.toThrow(
-      'not issued to this client'
-    );
+    await expect(
+      provider.exchangeAuthorizationCode(otherClient, code, verifier),
+    ).rejects.toThrow('not issued to this client');
   });
+
+  // PKCE enforcement is verified by the SDK at the /token HTTP boundary, not
+  // by the provider directly (see src/auth/provider.ts comment in
+  // exchangeAuthorizationCode). The integration test
+  // `auth-integration.test.ts > rejects token exchange with a wrong
+  // code_verifier (PKCE S256)` exercises that boundary end-to-end.
 
   it('rejects expired or invalid access token', async () => {
     const provider = new AuthorClawAuthProvider(config);
@@ -218,17 +253,18 @@ describe('AuthorClawAuthProvider', () => {
         redirectUrl = url;
       },
     };
+    const refreshPair = makePkce('refresh-test-verifier-12345-must-be-43-chars-long-xx');
     await provider.authorize(
       client,
       {
-        codeChallenge: 'ch',
+        codeChallenge: refreshPair.challenge,
         redirectUri: 'http://localhost/cb',
       },
       mockRes as any
     );
 
     const code = new URL(redirectUrl).searchParams.get('code')!;
-    const tokens = await provider.exchangeAuthorizationCode(client, code);
+    const tokens = await provider.exchangeAuthorizationCode(client, code, refreshPair.verifier);
 
     // Refresh
     const newTokens = await provider.exchangeRefreshToken(client, tokens.refresh_token!);
@@ -257,17 +293,18 @@ describe('AuthorClawAuthProvider', () => {
         redirectUrl = url;
       },
     };
+    const revokePair = makePkce('revoke-test-verifier-12345-must-be-43-chars-long-xxx');
     await provider.authorize(
       client,
       {
-        codeChallenge: 'ch',
+        codeChallenge: revokePair.challenge,
         redirectUri: 'http://localhost/cb',
       },
       mockRes as any
     );
 
     const code = new URL(redirectUrl).searchParams.get('code')!;
-    const tokens = await provider.exchangeAuthorizationCode(client, code);
+    const tokens = await provider.exchangeAuthorizationCode(client, code, revokePair.verifier);
 
     // Revoke
     await provider.revokeToken(client, { token: tokens.access_token });
@@ -288,13 +325,14 @@ describe('AuthorClawAuthProvider', () => {
         redirectUrl = url;
       },
     };
+    const attackerPair = makePkce('attacker-test-verifier-12345-must-be-43-chars-long');
     await provider.authorize(
       client,
-      { codeChallenge: 'ch', redirectUri: 'http://localhost/cb' },
+      { codeChallenge: attackerPair.challenge, redirectUri: 'http://localhost/cb' },
       mockRes as any
     );
     const code = new URL(redirectUrl).searchParams.get('code')!;
-    const tokens = await provider.exchangeAuthorizationCode(client, code);
+    const tokens = await provider.exchangeAuthorizationCode(client, code, attackerPair.verifier);
 
     const attacker = { ...client, client_id: 'attacker' };
     await provider.revokeToken(attacker, { token: tokens.access_token });

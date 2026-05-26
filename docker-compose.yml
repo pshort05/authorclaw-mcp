@@ -4,7 +4,8 @@ services:
   # Mutates the files in AUTHORCLAW_SRC on the host so the subsequent build picks
   # up the patched source.  Runs once and exits.
   authorclaw-patcher:
-    image: alpine:3.19
+    # Pinned to a content digest for supply-chain integrity (SR-4, CM-2).
+    image: alpine:3.19@sha256:6baf43584bcb78f2e5847d1de515f23499913ac9f12bdf834811a3145eb11ca1
     volumes:
       - ${AUTHORCLAW_SRC:-/opt/docker-compose/authorclaw/src}:/src
       - ./authorclaw-docker-fix/apply-lan-patch.sh:/apply-lan-patch.sh:ro
@@ -49,7 +50,10 @@ services:
 
   # Step 3: MCP bridge (this repo).
   authorclaw-mcp:
-    image: ghcr.io/pshort05/authorclaw-mcp:latest
+    # Pin to a specific version rather than :latest. To upgrade, bump this tag
+    # alongside the package.json version and verify against the release notes
+    # at https://github.com/pshort05/authorclaw-mcp/releases (SR-4).
+    image: ghcr.io/pshort05/authorclaw-mcp:0.2.7
     container_name: authorclaw-mcp
     restart: unless-stopped
     depends_on:

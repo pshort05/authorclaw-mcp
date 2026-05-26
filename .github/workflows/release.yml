@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - '[0-9]*'
+      - 'v[0-9]*'
 
 permissions:
   contents: write
@@ -24,7 +24,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-fund
+
+      - name: Production audit gate
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Test
         run: npm run test:run
@@ -33,9 +36,8 @@ jobs:
         run: npm run build
 
       - name: Create archive
-        run: tar -czf openclaw-mcp-${{ github.ref_name }}.tar.gz dist package.json README.md LICENSE
+        run: tar -czf authorclaw-mcp-${{ github.ref_name }}.tar.gz dist package.json README.md LICENSE CHANGELOG.md
 
-      # Docker image build & push to GHCR
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -48,7 +50,7 @@ jobs:
 
       - name: Extract version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -57,8 +59,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/freema/openclaw-mcp:latest
-            ghcr.io/freema/openclaw-mcp:${{ steps.version.outputs.VERSION }}
+            ghcr.io/pshort05/authorclaw-mcp:latest
+            ghcr.io/pshort05/authorclaw-mcp:${{ steps.version.outputs.VERSION }}
           build-args: |
             VERSION=${{ steps.version.outputs.VERSION }}
           cache-from: type=gha
@@ -67,15 +69,15 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: openclaw-mcp-${{ github.ref_name }}.tar.gz
+          files: authorclaw-mcp-${{ github.ref_name }}.tar.gz
           generate_release_notes: true
           body: |
             ## Docker image
 
             ```bash
-            docker pull ghcr.io/freema/openclaw-mcp:${{ steps.version.outputs.VERSION }}
+            docker pull ghcr.io/pshort05/authorclaw-mcp:${{ steps.version.outputs.VERSION }}
             ```
 
-            See [deployment docs](https://github.com/freema/openclaw-mcp/blob/main/docs/deployment.md) for full setup instructions.
+            See the [installation docs](https://github.com/pshort05/authorclaw-mcp/blob/main/docs/installation.md) for full setup instructions.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

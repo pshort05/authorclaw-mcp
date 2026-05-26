@@ -69,25 +69,19 @@ const AUTH_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const REFRESH_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const REAPER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
-// An array that says "yes" to any .includes() check.
-// The SDK authorize handler validates redirect_uri against client.redirect_uris.includes().
-// For the pre-configured client we accept any redirect_uri since the real auth
-// gate is the client_secret (verified during token exchange).
-//
-// length is intentionally NOT 1. The SDK has two branches when redirect_uri is omitted:
-//   - length === 1: use redirect_uris[0] as the implicit URI  — BROKEN with a proxy
-//     because index [0] returns undefined on an empty backing array.
-//   - length !== 1: throw "redirect_uri must be specified" — correct behaviour,
-//     since any well-formed MCP client will always supply a redirect_uri.
-// Using Number.MAX_SAFE_INTEGER ensures the SDK always takes the "must be specified"
-// branch rather than trying to use a non-existent element.
-const ALLOW_ANY_REDIRECT: string[] = new Proxy([] as string[], {
-  get(target, prop) {
-    if (prop === 'includes') return () => true;
-    if (prop === 'length') return Number.MAX_SAFE_INTEGER;
-    return Reflect.get(target, prop);
-  },
-});
+// Default redirect URIs used when MCP_REDIRECT_URIS is not configured.
+// The MCP SDK 1.29+ enforces RFC 8252 §7.3: requested redirect_uri must match
+// one of the registered URIs (loopback host with relaxed port, otherwise exact
+// match). Operators should set MCP_REDIRECT_URIS explicitly for production
+// (AC-4). These defaults cover the common local development clients (Claude
+// Desktop, Inspector, Claude.ai callback) plus the loopback URIs the test
+// suite uses.
+const DEFAULT_REDIRECT_URIS: string[] = [
+  'http://localhost/callback',
+  'http://127.0.0.1/callback',
+  'http://localhost/oauth/callback',
+  'https://claude.ai/oauth/callback',
+];
 
 /**
  * In-memory clients store.
@@ -122,7 +116,7 @@ export class AuthorClawClientsStore implements OAuthRegisteredClientsStore {
       const redirectUris: string[] =
         config.redirectUris && config.redirectUris.length > 0
           ? config.redirectUris
-          : ALLOW_ANY_REDIRECT;
+          : DEFAULT_REDIRECT_URIS;
 
       this.client = {
         client_id: config.clientId,
@@ -263,6 +257,16 @@ export class AuthorClawAuthProvider implements OAuthServerProvider {
     if (codeData.client.client_id !== client.client_id) {
       throw new InvalidRequestError('Authorization code was not issued to this client');
     }
+
+    // PKCE enforcement (IA-2, AC-3). The MCP SDK token handler verifies
+    // S256(code_verifier) === code_challenge BEFORE calling this method,
+    // using the challenge returned by `challengeForAuthorizationCode` above.
+    // The `_codeVerifier` parameter is intentionally unused: the SDK only
+    // forwards it when `provider.skipLocalPkceValidation === true`, which we
+    // do not opt into. The negative test
+    // `auth-integration.test.ts > rejects token exchange with a wrong
+    // code_verifier (PKCE S256)` pins this guarantee from the outside; if a
+    // future SDK release silently drops PKCE enforcement, that test fails.
 
     this.codes.delete(authorizationCode);
 

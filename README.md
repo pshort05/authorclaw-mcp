@@ -8,11 +8,11 @@ The bridge exposes 58 tools across twelve surfaces: chat, projects, plot promise
 
 | Item | Value |
 | --- | --- |
-| Current release | `v0.2.6` |
+| Current release | `v0.2.7` |
 | License | MIT |
 | Node.js | 20 or newer |
 | AuthorClaw | tested against v4.0.0 |
-| Test count | 333 unit tests |
+| Test count | 336 unit tests |
 | MCP protocol | 2024-11-05 |
 
 ## Why this exists

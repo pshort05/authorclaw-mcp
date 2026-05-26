@@ -10,6 +10,17 @@ const SENSITIVE_PATTERNS = [
   /token["\s:=]+[A-Za-z0-9\-._~+/]{8,}/gi,
   /secret["\s:=]+[A-Za-z0-9\-._~+/]{8,}/gi,
   /password["\s:=]+\S+/gi,
+  // Bare provider-format keys. These appear without a keyword prefix when a
+  // user pastes a key directly into chat content (SI-10, AU-12).
+  /\bsk-[A-Za-z0-9_-]{20,}/g, // OpenAI, Anthropic, OpenRouter, Perplexity, etc.
+  /\bxai-[A-Za-z0-9_-]{20,}/g, // xAI
+  /\bAIza[A-Za-z0-9_-]{20,}/g, // Google AI / Gemini
+  /\bghp_[A-Za-z0-9]{20,}/g, // GitHub personal access tokens
+  /\bgho_[A-Za-z0-9]{20,}/g, // GitHub OAuth tokens
+  /\bghs_[A-Za-z0-9]{20,}/g, // GitHub App server tokens
+  /\bghr_[A-Za-z0-9]{20,}/g, // GitHub refresh tokens
+  /\bglpat-[A-Za-z0-9_-]{20,}/g, // GitLab personal access tokens
+  /\bAKIA[0-9A-Z]{16}/g, // AWS access key ID
 ];
 
 function sanitizeLogMessage(message: string): string {

@@ -1,5 +1,8 @@
 # ---- Builder stage ----
-FROM node:20-slim AS builder
+# Pinned to a content digest for supply-chain integrity (SR-4, CM-2).
+# Update both `FROM` digests together. Get a fresh digest with:
+#   docker pull node:20-slim && docker inspect node:20-slim --format '{{index .RepoDigests 0}}'
+FROM node:20-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 AS builder
 
 WORKDIR /app
 
@@ -23,7 +26,7 @@ RUN npm run build
 RUN npm ci --omit=dev
 
 # ---- Runtime stage ----
-FROM node:20-slim AS runtime
+FROM node:20-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 AS runtime
 
 ARG VERSION=dev
 
@@ -48,6 +51,8 @@ COPY --from=builder /app/package.json package.json
 # Environment defaults
 ENV NODE_ENV=production
 ENV AUTHORCLAW_URL=http://authorclaw:3847
+# Secure default: require explicit override to disable auth (CM-6).
+ENV AUTH_ENABLED=true
 
 # Run as non-root user
 RUN chown -R node:node /app

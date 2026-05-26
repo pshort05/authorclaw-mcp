@@ -84,6 +84,14 @@ beforeAll(async () => {
   const { app } = createTestApp();
   await new Promise<void>((resolve) => {
     server = app.listen(0, '127.0.0.1', () => {
+      // Node's fetch reuses keep-alive connections by default; the test file
+      // contains many fetches that never read their body. With the default
+      // 5-second keepAliveTimeout, the server hangs waiting for those idle
+      // connections to close. Disabling keep-alive forces each response to
+      // close its socket as soon as the body is written, which makes the
+      // test file reliably terminate.
+      server.keepAliveTimeout = 1;
+      server.headersTimeout = 2000;
       const addr = server.address() as { port: number };
       baseUrl = `http://127.0.0.1:${addr.port}`;
       resolve();
@@ -92,6 +100,11 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  // Force-close idle keep-alive connections that Node's fetch leaves open.
+  // Without this, server.close() waits for the default 5-second
+  // keepAliveTimeout per connection, causing the test file to hang well
+  // past vitest's per-test timeout.
+  server.closeAllConnections();
   await new Promise<void>((resolve, reject) => {
     server.close((err) => (err ? reject(err) : resolve()));
   });
@@ -223,6 +236,43 @@ describe('Full OAuth flow with pre-configured client', () => {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
     expect(sseRes.status).toBe(200);
+  });
+
+  it('rejects token exchange with a wrong code_verifier (PKCE S256)', async () => {
+    const state = randomUUID();
+    const codeVerifier = randomUUID();
+    const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
+
+    const authorizeUrl = new URL(`${baseUrl}/authorize`);
+    authorizeUrl.searchParams.set('response_type', 'code');
+    authorizeUrl.searchParams.set('client_id', CLIENT_ID);
+    authorizeUrl.searchParams.set('redirect_uri', 'http://localhost/callback');
+    authorizeUrl.searchParams.set('state', state);
+    authorizeUrl.searchParams.set('code_challenge', codeChallenge);
+    authorizeUrl.searchParams.set('code_challenge_method', 'S256');
+
+    const authorizeRes = await fetch(authorizeUrl.toString(), { redirect: 'manual' });
+    expect(authorizeRes.status).toBe(302);
+    const code = new URL(authorizeRes.headers.get('location')!).searchParams.get('code')!;
+
+    // Submit the wrong verifier. Server must reject.
+    const wrongVerifier = randomUUID();
+    const tokenRes = await fetch(`${baseUrl}/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        code_verifier: wrongVerifier,
+        redirect_uri: 'http://localhost/callback',
+      }).toString(),
+    });
+    expect(tokenRes.status).toBeGreaterThanOrEqual(400);
+    expect(tokenRes.status).toBeLessThan(500);
+    const body: any = await tokenRes.json();
+    expect(body.error).toBeTruthy();
   });
 
   it('authorize rejects unknown client_id', async () => {

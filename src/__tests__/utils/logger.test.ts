@@ -136,5 +136,25 @@ describe('logger', () => {
       expect(output).toContain('[REDACTED]');
       expect(output).not.toContain('mysupersecretvalue123');
     });
+
+    it('redacts bare provider keys pasted into chat content', async () => {
+      const { log } = await loadLogger();
+      const samples = [
+        ['my key is sk-proj-abcdefghijklmnopqrstuvwxyz', 'sk-proj-abcdefghijklmnopqrstuvwxyz'],
+        ['anthropic sk-ant-abcdefghijklmnopqrstuvwxyz', 'sk-ant-abcdefghijklmnopqrstuvwxyz'],
+        ['xai-1234567890abcdefghijklmnopqr leaked', 'xai-1234567890abcdefghijklmnopqr'],
+        ['google AIzaSyA1234567890abcdefghijklmnop', 'AIzaSyA1234567890abcdefghijklmnop'],
+        ['github ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ012345', 'ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ012345'],
+        ['gitlab glpat-abcdefghij1234567890', 'glpat-abcdefghij1234567890'],
+        ['aws access AKIAIOSFODNN7EXAMPLE', 'AKIAIOSFODNN7EXAMPLE'],
+      ];
+      for (const [input, secret] of samples) {
+        consoleSpy.mockClear();
+        log(input);
+        const output = consoleSpy.mock.calls[0][0] as string;
+        expect(output).toContain('[REDACTED]');
+        expect(output).not.toContain(secret);
+      }
+    });
   });
 });
